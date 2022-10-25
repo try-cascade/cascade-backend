@@ -22,15 +22,5 @@ export default function createService(scope: any, name: string, clusterArn: stri
     ]
   })
 
-  /*
-{
-  "awsvpcConfiguration": {
-    "subnets": ["string", ...],
-    "securityGroups": ["string", ...],
-    "assignPublicIp": "ENABLED"|"DISABLED"
-  }
-}
-  */
-
   return service;
 }
