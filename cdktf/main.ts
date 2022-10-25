@@ -10,11 +10,15 @@ import createRouteTable from "./resources/create_route_table";
 import createRouteTableAssociation from "./resources/create_route_table_association";
 import createRoute from "./resources/create_route";
 import createCluster from "./resources/create_cluster";
-import createLB from "./resources/create_load_balancer";
-import createTargetGroup from "./resources/create_target_group";
+
+import createALB from "./resources/create_app_load_balancer";
+import createAlbTargetGroup from "./resources/create_alb_target_group";
+import createAlbListener from "./resources/create_alb_listener";
+
 import createService from "./resources/create_ecs_service";
 import createTaskDefinition from "./resources/create_task_definition";
 import createSecurityGroup from "./resources/create_security_group";
+import createAlbSecurityGroup from "./resources/create_alb_security_group";
 
 class MyStack extends TerraformStack {
   constructor(scope: Construct, name: string) {
@@ -52,17 +56,21 @@ class MyStack extends TerraformStack {
     // create security group
     const securityGroup = createSecurityGroup(this, "cascade-security-group", aws_vpc.id);
 
-    const loadBalancer = createLB(this, "cascade-lb", securityGroup.id, pubSub1.id, pubSub2.id)
-    console.log(loadBalancer.dnsName);
+    const lbSecurityGroup = createAlbSecurityGroup(this, "cascade-lb-security-group", aws_vpc.id);
 
-    const targetGroup = createTargetGroup(this, "cascade-target", aws_vpc.id)
+    const appLoadBalancer = createALB(this, "cascade-lb", lbSecurityGroup.id, pubSub1.id, pubSub2.id)
+    console.log(appLoadBalancer.dnsName);
+
+    const albTargetGroup = createAlbTargetGroup(this, "cascade-target", aws_vpc.id);
+  
+    createAlbListener(this, "cascade-alb-listener", appLoadBalancer.arn, albTargetGroup.arn);
 
     const ourCluster = createCluster(this, "cascade-cluster")
     const ourTaskDefinition = createTaskDefinition(this, "cascade-task-definition")
     const clusterArn = ourCluster.arn;
     const taskDefinitionArn = ourTaskDefinition.arn;
 
-    createService(this, "cascade-service", clusterArn, taskDefinitionArn, pubSub1.id, pubSub2.id, securityGroup.id, targetGroup.arn);
+    createService(this, "cascade-service", clusterArn, taskDefinitionArn, pubSub1.id, pubSub2.id, securityGroup.id, albTargetGroup.arn);
   }
 }
 
