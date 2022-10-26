@@ -7,5 +7,7 @@ router.get('/clusters', awsController.clusters)
 
 router.post('/bucket', awsController.createBucket)
 
+router.post('/environment', awsController.addEnvironmentToBucket)
+
 
 module.exports = router
