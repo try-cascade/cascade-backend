@@ -21,11 +21,11 @@ import createAlbListener from "./resources/create_alb_listener";
 
 import createSecurityGroup from "./resources/create_security_group";
 import createAlbSecurityGroup from "./resources/create_alb_security_group";
+import createExecutionRole from "./resources/iam/create_execution_role";
+import createTaskRole from "./resources/iam/create_task_role";
 
 import { Vpc } from '@cdktf/provider-aws/lib/vpc';
 import { Subnet } from '@cdktf/provider-aws/lib/subnet';
-
-
 
 class EnvironmentStack extends TerraformStack {
   public vpc: Vpc;
@@ -83,7 +83,9 @@ class ServiceStack extends TerraformStack {
     createAlbListener(this, "cascade-alb-listener", appLoadBalancer.arn, albTargetGroup.arn);
 
     const ourCluster = createCluster(this, "cascade-cluster");
-    const ourTaskDefinition = createTaskDefinition(this, "cascade-task-definition");
+    const executionRole = createExecutionRole(this, "cascade"); // name interpolated within
+    const taskRole = createTaskRole(this, "cascade"); // name interpolated within
+    const ourTaskDefinition = createTaskDefinition(this, "cascade-task-definition", executionRole.arn, taskRole.arn);
     const clusterArn = ourCluster.arn;
     const taskDefinitionArn = ourTaskDefinition.arn;
 
@@ -100,27 +102,3 @@ new ServiceStack(app, "service-stack", {
 });
 
 app.synth();
-
-/*
-const cascadeRole = iam.IamRole(this, "cascade_vpc_role",
-        name="my-cascade-role",
-        managed_policy_arns=[
-            "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-        ],
-        assume_role_policy="""{
-            "Version": "2012-10-17",
-            "Statement": [
-                {
-                    "Action": "sts:AssumeRole",
-                    "Principal": {
-                        "Service": "lambda.amazonaws.com"
-                    },
-                    "Effect": "Allow",
-                    "Sid": ""
-                }
-            ]
-        }""",
-        )
-
-- create a role and attach policies
-*/
