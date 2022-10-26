@@ -1,12 +1,8 @@
 const { ECSClient, ListClustersCommand } = require("@aws-sdk/client-ecs");
 const { S3Client, CreateBucketCommand } = require("@aws-sdk/client-s3");
 
-const { getDefaultRoleAssumerWithWebIdentity } = require("@aws-sdk/client-sts")
-const { defaultProvider } = require("@aws-sdk/credential-provider-node");
+const { IAMClient, GetUserCommand } = require("@aws-sdk/client-iam");
 
-const provider = defaultProvider({
-  roleAssumerWithWebIdentity: getDefaultRoleAssumerWithWebIdentity,
-});
 
 async function clusters(req, res) {
   try {
@@ -25,9 +21,16 @@ async function vpcs(req, res) {
 }
 
 async function createBucket(req, res) {
-  const user = await provider();
+
+  const user = new IAMClient();
+  const getUser = new GetUserCommand(user);
+  const userResponse = await user.send(getUser);
+
+  const id = userResponse.User.Arn.match(/\d+/)[0]
+  // console.log(userResponse)
+
   const client = new S3Client();
-  const command = new CreateBucketCommand({ Bucket: "cascade" + req.body.name.toLowerCase() + user.accessKeyId.toLowerCase() })
+  const command = new CreateBucketCommand({ Bucket: "cascade-" + req.body.name.toLowerCase() + "-" + id })
   const response = await client.send(command)
 
   res.status(200).json(response)
