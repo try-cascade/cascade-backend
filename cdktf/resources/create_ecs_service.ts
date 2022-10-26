@@ -19,7 +19,10 @@ export default function createService(scope: any, name: string, clusterArn: stri
         containerName: "yk-adot-app-container",
         targetGroupArn: targetGroupArn,
       }
-    ]
+    ],
+    tags: {
+      Name: name
+    }
   })
 
   return service;

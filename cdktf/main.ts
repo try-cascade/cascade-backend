@@ -28,29 +28,32 @@ import createLogGroup from "./resources/create_log_group";
 import { Vpc } from '@cdktf/provider-aws/lib/vpc';
 import { Subnet } from '@cdktf/provider-aws/lib/subnet';
 
+const dummyObj = {
+  envName: "hello"
+}
+
+const envName = dummyObj.envName;
+
 class EnvironmentStack extends TerraformStack {
   public vpc: Vpc;
   public pubSub1: Subnet;
   public pubSub2: Subnet;
   constructor(scope: Construct, name: string) {
     super(scope, name);
-
-    new AwsProvider(this, "AWS", {
-      region: "us-east-2", // grab it from .aws
-    });
-
-    this.vpc = createVpc(this, "cascade") // policy for creating vpc?
-    const gateway = createInternetGateway(this, "cascade_gw", this.vpc.id)
-
-    this.pubSub1 = createSubnet(this, "cascade-public-1", this.vpc.id, true, "us-east-2a", "172.31.0.0/20")
-    this.pubSub2 = createSubnet(this, "cascade-public-2", this.vpc.id, true, "us-east-2b", "172.31.16.0/20")
     
-    const table = createRouteTable(this, "cascade-table-1", this.vpc.id)
+    new AwsProvider(this, "AWS");
+    this.vpc = createVpc(this, `cs-${envName}-vpc`) // policy for creating vpc?
+    const gateway = createInternetGateway(this, `cs-${envName}-internet-gateway`, this.vpc.id)
 
-    createRouteTableAssociation(this, "cascade-sub-assoc-1", this.pubSub1.id, table.id)
-    createRouteTableAssociation(this, "cascade-sub-assoc-2", this.pubSub2.id, table.id)
+    this.pubSub1 = createSubnet(this, `cs-${envName}-public-1`, this.vpc.id, true, "us-east-2a", "172.31.0.0/20")
+    this.pubSub2 = createSubnet(this, `cs-${envName}-public-2`, this.vpc.id, true, "us-east-2b", "172.31.16.0/20")
+    
+    const table = createRouteTable(this, `cs-${envName}-table-1`, this.vpc.id)
 
-    createRoute(this, "cascade-route-1", table.id, gateway.id)
+    createRouteTableAssociation(this, `cs-${envName}-sub-assoc-1`, this.pubSub1.id, table.id)
+    createRouteTableAssociation(this, `cs-${envName}-sub-assoc-2`, this.pubSub2.id, table.id)
+
+    createRoute(this, `cs-${envName}-route-1`, table.id, gateway.id)
 
     // createSubnet(this, "cascade-private-1", aws_vpc.id, false, "us-east-1a", "10.0.3.0/24")
     // createSubnet(this, "cascade-private-2", aws_vpc.id, false, "us-east-1b", "10.0.4.0/24")
@@ -69,30 +72,26 @@ class ServiceStack extends TerraformStack {
 
     const { vpcId, pubSubId1, pubSubId2 } = config;
 
-    new AwsProvider(this, "AWS", {
-      region: "us-east-2", // grab it from .aws
-    });
+    new AwsProvider(this, "AWS");
 
-    const securityGroup = createSecurityGroup(this, "cascade-security-group", vpcId);
+    const securityGroup = createSecurityGroup(this, `cs-${envName}-security-group`, vpcId);
 
-    const lbSecurityGroup = createAlbSecurityGroup(this, "cascade-lb-security-group", vpcId);
+    const lbSecurityGroup = createAlbSecurityGroup(this, `cs-${envName}-alb-security-group`, vpcId);
 
-    const appLoadBalancer = createALB(this, "cascade-lb", lbSecurityGroup.id, pubSubId1, pubSubId2);
+    const appLoadBalancer = createALB(this, `cs-${envName}-lb`, lbSecurityGroup.id, pubSubId1, pubSubId2);
 
-    const albTargetGroup = createAlbTargetGroup(this, "cascade-target", vpcId);
+    const albTargetGroup = createAlbTargetGroup(this, `cs-${envName}-target-group`, vpcId);
   
-    createAlbListener(this, "cascade-alb-listener", appLoadBalancer.arn, albTargetGroup.arn);
+    createAlbListener(this, `cs-${envName}-alb-listener`, appLoadBalancer.arn, albTargetGroup.arn);
 
-    const ourCluster = createCluster(this, "cascade-cluster");
-    const executionRole = createExecutionRole(this, "cascade"); // name interpolated within
-    const taskRole = createTaskRole(this, "cascade"); // name interpolated within
-    const logGroup = createLogGroup(this, "cascade");
+    const cluster = createCluster(this, `cs-${envName}-cluster`);
+    const executionRole = createExecutionRole(this, `cs-${envName}-execution-role`); // name interpolated within
+    const taskRole = createTaskRole(this, `cs-${envName}-task-role`); // name interpolated within
+    const logGroup = createLogGroup(this, `ecs/cs-${envName}-loggroup`);
 
-    const ourTaskDefinition = createTaskDefinition(this, "cascade-task-definition", executionRole.arn, taskRole.arn, logGroup.name);
-    const clusterArn = ourCluster.arn;
-    const taskDefinitionArn = ourTaskDefinition.arn;
+    const taskDefinition = createTaskDefinition(this, `cs-${envName}-task-definition`, executionRole.arn, taskRole.arn, logGroup.name);
 
-    createService(this, "cascade-service", clusterArn, taskDefinitionArn, pubSubId1, pubSubId2, securityGroup.id, albTargetGroup.arn);
+    createService(this, `cs-${envName}-service`, cluster.arn, taskDefinition.arn, pubSubId1, pubSubId2, securityGroup.id, albTargetGroup.arn);
   }
 }
 

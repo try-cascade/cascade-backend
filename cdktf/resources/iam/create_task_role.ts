@@ -2,8 +2,11 @@ import { IamRole } from "@cdktf/provider-aws/lib/iam-role"
 
 // Role that allows us to push logs
 export default function createTaskRole(scope: any, name: string) {
-  const taskRole = new IamRole(scope, `${name}-task-role`, {
-    name: `${name}-task-role`,
+  const taskRole = new IamRole(scope, name, {
+    name,
+    tags: {
+      Name: name
+    },
     inlinePolicy: [
       {
         name: "allow-logs",

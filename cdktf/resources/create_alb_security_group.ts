@@ -4,10 +4,9 @@ import { SecurityGroup } from "@cdktf/provider-aws/lib/security-group";
 export default function createAlbSecurityGroup(scope: any, name: string, vpcId: string) {
   const securityGroup = new SecurityGroup(scope, name, {
       vpcId: vpcId,
-      tags: 
-        {
-          key: "cascade security group"
-        },
+      tags: {
+        Name: name
+      },
       ingress: [
         // allow HTTP traffic from everywhere
         {

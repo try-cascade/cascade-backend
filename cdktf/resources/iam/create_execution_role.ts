@@ -1,8 +1,11 @@
 import { IamRole } from "@cdktf/provider-aws/lib/iam-role"
 
 export default function createExecutionRole(scope: any, name: string) {
-  const executionRole = new IamRole(scope, `${name}-execution-role`, {
-    name: `${name}-execution-role`,
+  const executionRole = new IamRole(scope, name, {
+    name,
+    tags: {
+      Name: name
+    },
     inlinePolicy: [
       {
         name: "allow-ecr-pull",
