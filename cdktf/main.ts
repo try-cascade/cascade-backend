@@ -23,6 +23,7 @@ import createSecurityGroup from "./resources/create_security_group";
 import createAlbSecurityGroup from "./resources/create_alb_security_group";
 import createExecutionRole from "./resources/iam/create_execution_role";
 import createTaskRole from "./resources/iam/create_task_role";
+import createLogGroup from "./resources/create_log_group";
 
 import { Vpc } from '@cdktf/provider-aws/lib/vpc';
 import { Subnet } from '@cdktf/provider-aws/lib/subnet';
@@ -85,7 +86,9 @@ class ServiceStack extends TerraformStack {
     const ourCluster = createCluster(this, "cascade-cluster");
     const executionRole = createExecutionRole(this, "cascade"); // name interpolated within
     const taskRole = createTaskRole(this, "cascade"); // name interpolated within
-    const ourTaskDefinition = createTaskDefinition(this, "cascade-task-definition", executionRole.arn, taskRole.arn);
+    const logGroup = createLogGroup(this, "cascade");
+
+    const ourTaskDefinition = createTaskDefinition(this, "cascade-task-definition", executionRole.arn, taskRole.arn, logGroup.name);
     const clusterArn = ourCluster.arn;
     const taskDefinitionArn = ourTaskDefinition.arn;
 
