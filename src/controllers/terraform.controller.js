@@ -1,6 +1,9 @@
 
 const { spawn } = require("child_process");
 
+const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
+const { IAMClient, GetUserCommand } = require("@aws-sdk/client-iam");
+
 function create(req, res) {
   const child = spawn('cdktf synth', {
     stdio: 'inherit',
@@ -33,8 +36,33 @@ function deploy(req, res) {
   })
 }
 
-function uploadS3EnvironmentObject(req, res) {
+/*
+Payload:
+{
+  "app": "name",
+  "env": "name"
+}
+*/
 
+async function uploadS3EnvironmentObject(req, res) {
+  const user = new IAMClient();
+  const getUser = new GetUserCommand(user);
+  const userResponse = await user.send(getUser);
+
+  const id = userResponse.User.Arn.match(/\d+/)[0]
+
+  const bucketParams = {
+    Bucket: "cascade-" + req.body.app.toLowerCase() + "-" + id,
+    Key: `${req.body.env}/env-stack/cdk.tf.json`,
+    // Need to read from ../../cdktf/cdktf.out/stacks/env-stack/cdk.tf.json
+    Body: JSON.stringify({
+      envName: req.body.env
+    })
+  }
+  const client = new S3Client();
+  const command = new PutObjectCommand(bucketParams);
+  const response = await client.send(command);
+  res.status(200).json(response)
 }
 
 module.exports = {
