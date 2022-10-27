@@ -38,6 +38,13 @@ Bucket Policy:
 }
 */
 
+/*
+Payload:
+{
+  "name": <appName>
+}
+*/
+
 async function createBucket(req, res) {
   const user = new IAMClient();
   const getUser = new GetUserCommand(user);
@@ -51,6 +58,14 @@ async function createBucket(req, res) {
 
   res.status(200).json(response)
 }
+
+/*
+Payload:
+{
+  "app": <appName>
+  "env": <envName>
+}
+*/
 
 async function addEnvironmentToBucket(req, res) {
   const user = new IAMClient();
@@ -115,5 +130,5 @@ module.exports = {
   clusters,
   createBucket,
   addEnvironmentToBucket,
-  environment
+  environment,
 }
