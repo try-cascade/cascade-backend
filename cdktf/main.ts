@@ -21,11 +21,27 @@ import createAlbListener from "./resources/create_alb_listener";
 
 import createSecurityGroup from "./resources/create_security_group";
 import createAlbSecurityGroup from "./resources/create_alb_security_group";
+import createExecutionRole from "./resources/iam/create_execution_role";
+import createTaskRole from "./resources/iam/create_task_role";
+import createLogGroup from "./resources/create_log_group";
 
 import { Vpc } from '@cdktf/provider-aws/lib/vpc';
 import { Subnet } from '@cdktf/provider-aws/lib/subnet';
 
+const dummyEnvObj = {
+  envName: "hello"
+}
 
+const envName = dummyEnvObj.envName;
+
+const dummyServiceObj = {
+  port: 8080,
+  image: "",
+  environment: [],
+  containerName: "adot-app"
+}
+
+const { port, image, environment, containerName } = dummyServiceObj;
 
 class EnvironmentStack extends TerraformStack {
   public vpc: Vpc;
@@ -33,23 +49,25 @@ class EnvironmentStack extends TerraformStack {
   public pubSub2: Subnet;
   constructor(scope: Construct, name: string) {
     super(scope, name);
-
-    new AwsProvider(this, "AWS", {
-      region: "us-east-2", // grab it from .aws
-    });
-
-    this.vpc = createVpc(this, "cascade") // policy for creating vpc?
-    const gateway = createInternetGateway(this, "cascade_gw", this.vpc.id)
-
-    this.pubSub1 = createSubnet(this, "cascade-public-1", this.vpc.id, true, "us-east-2a", "172.31.0.0/20")
-    this.pubSub2 = createSubnet(this, "cascade-public-2", this.vpc.id, true, "us-east-2b", "172.31.16.0/20")
     
-    const table = createRouteTable(this, "cascade-table-1", this.vpc.id)
+    const ourAwsProvider = new AwsProvider(this, "AWS");
+    console.log(ourAwsProvider.profile, "profile") // try this again
+    console.log(ourAwsProvider.region, "region")
+    console.log(ourAwsProvider.secretKey, "secret key")
+    console.log(ourAwsProvider.accessKey, "access key")
 
-    createRouteTableAssociation(this, "cascade-sub-assoc-1", this.pubSub1.id, table.id)
-    createRouteTableAssociation(this, "cascade-sub-assoc-2", this.pubSub2.id, table.id)
+    this.vpc = createVpc(this, `cs-${envName}-vpc`)
+    const gateway = createInternetGateway(this, `cs-${envName}-internet-gateway`, this.vpc.id)
 
-    createRoute(this, "cascade-route-1", table.id, gateway.id)
+    this.pubSub1 = createSubnet(this, `cs-${envName}-public-1`, this.vpc.id, true, "us-east-2a", "172.31.0.0/20")
+    this.pubSub2 = createSubnet(this, `cs-${envName}-public-2`, this.vpc.id, true, "us-east-2b", "172.31.16.0/20")
+    
+    const table = createRouteTable(this, `cs-${envName}-table-1`, this.vpc.id)
+
+    createRouteTableAssociation(this, `cs-${envName}-sub-assoc-1`, this.pubSub1.id, table.id)
+    createRouteTableAssociation(this, `cs-${envName}-sub-assoc-2`, this.pubSub2.id, table.id)
+
+    createRoute(this, `cs-${envName}-route-1`, table.id, gateway.id)
 
     // createSubnet(this, "cascade-private-1", aws_vpc.id, false, "us-east-1a", "10.0.3.0/24")
     // createSubnet(this, "cascade-private-2", aws_vpc.id, false, "us-east-1b", "10.0.4.0/24")
@@ -68,26 +86,26 @@ class ServiceStack extends TerraformStack {
 
     const { vpcId, pubSubId1, pubSubId2 } = config;
 
-    new AwsProvider(this, "AWS", {
-      region: "us-east-2", // grab it from .aws
-    });
+    new AwsProvider(this, "AWS");
 
-    const securityGroup = createSecurityGroup(this, "cascade-security-group", vpcId);
+    const securityGroup = createSecurityGroup(this, `cs-${envName}-security-group`, vpcId, port);
 
-    const lbSecurityGroup = createAlbSecurityGroup(this, "cascade-lb-security-group", vpcId);
+    const lbSecurityGroup = createAlbSecurityGroup(this, `cs-${envName}-alb-security-group`, vpcId);
 
-    const appLoadBalancer = createALB(this, "cascade-lb", lbSecurityGroup.id, pubSubId1, pubSubId2);
+    const appLoadBalancer = createALB(this, `cs-${envName}-lb`, lbSecurityGroup.id, pubSubId1, pubSubId2);
 
-    const albTargetGroup = createAlbTargetGroup(this, "cascade-target", vpcId);
+    const albTargetGroup = createAlbTargetGroup(this, `cs-${envName}-target-group`, vpcId);
   
-    createAlbListener(this, "cascade-alb-listener", appLoadBalancer.arn, albTargetGroup.arn);
+    createAlbListener(this, `cs-${envName}-alb-listener`, appLoadBalancer.arn, albTargetGroup.arn);
 
-    const ourCluster = createCluster(this, "cascade-cluster");
-    const ourTaskDefinition = createTaskDefinition(this, "cascade-task-definition");
-    const clusterArn = ourCluster.arn;
-    const taskDefinitionArn = ourTaskDefinition.arn;
+    const cluster = createCluster(this, `cs-${envName}-cluster`);
+    const executionRole = createExecutionRole(this, `cs-${envName}-execution-role`);
+    const taskRole = createTaskRole(this, `cs-${envName}-task-role`);
+    const logGroup = createLogGroup(this, `ecs/cs-${envName}-loggroup`);
 
-    createService(this, "cascade-service", clusterArn, taskDefinitionArn, pubSubId1, pubSubId2, securityGroup.id, albTargetGroup.arn);
+    const taskDefinition = createTaskDefinition(this, `cs-${envName}-task-definition`, executionRole.arn, taskRole.arn, logGroup.name, port, image, environment, containerName);
+
+    createService(this, `cs-${envName}-service`, cluster.arn, taskDefinition.arn, pubSubId1, pubSubId2, securityGroup.id, albTargetGroup.arn, port, containerName);
   }
 }
 
@@ -100,27 +118,3 @@ new ServiceStack(app, "service-stack", {
 });
 
 app.synth();
-
-/*
-const cascadeRole = iam.IamRole(this, "cascade_vpc_role",
-        name="my-cascade-role",
-        managed_policy_arns=[
-            "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-        ],
-        assume_role_policy="""{
-            "Version": "2012-10-17",
-            "Statement": [
-                {
-                    "Action": "sts:AssumeRole",
-                    "Principal": {
-                        "Service": "lambda.amazonaws.com"
-                    },
-                    "Effect": "Allow",
-                    "Sid": ""
-                }
-            ]
-        }""",
-        )
-
-- create a role and attach policies
-*/
