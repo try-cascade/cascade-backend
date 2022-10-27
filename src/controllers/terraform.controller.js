@@ -33,7 +33,12 @@ function deploy(req, res) {
   })
 }
 
+function uploadS3EnvironmentObject(req, res) {
+
+}
+
 module.exports = {
   create,
-  deploy
+  deploy,
+  uploadS3EnvironmentObject
 }
