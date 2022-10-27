@@ -9,5 +9,7 @@ router.post('/bucket', awsController.createBucket)
 
 router.post('/environment', awsController.addEnvironmentToBucket)
 
+router.get('/:app/environment/:env', awsController.environment)
+
 
 module.exports = router

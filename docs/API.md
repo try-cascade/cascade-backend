@@ -27,7 +27,8 @@ POST /terraform/environment
 payload:
 
 {
-  "name": "example-name"
+  "app": "name",
+  "env": "name"
 }
 
 Note: dashes should be used between words
