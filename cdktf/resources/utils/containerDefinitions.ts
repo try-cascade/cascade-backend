@@ -21,7 +21,7 @@ export default function containerDefinitions(logGroupName: string, port: number,
       cpu: 0,
       environmentFiles: [
         {
-          "value": s3Arn,
+          "value": `${s3Arn}/.env`,
           "type": "s3"
         }
       ],
@@ -65,7 +65,7 @@ export default function containerDefinitions(logGroupName: string, port: number,
       cpu: 0,
       environmentFiles: [
         {
-          "value": s3Arn,
+          "value": `${s3Arn}/.env`,
           "type": "s3"
         }
       ],

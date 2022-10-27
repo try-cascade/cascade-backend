@@ -29,18 +29,19 @@ import { Vpc } from '@cdktf/provider-aws/lib/vpc';
 import { Subnet } from '@cdktf/provider-aws/lib/subnet';
 
 const dummyEnvObj = {
-  envName: "hello",
-  s3Arn: ""
+  envName: "hello"
 }
 
 const dummyServiceObj = {
   port: 8080,
   image: "",
-  containerName: "adot-app"
+  containerName: "adot-app",
+  s3Arn: ""
 }
 
-const { envName, s3Arn } = dummyEnvObj;
-const { port, image, containerName } = dummyServiceObj;
+
+const { envName } = dummyEnvObj;
+const { port, image, containerName, s3Arn } = dummyServiceObj;
 
 class EnvironmentStack extends TerraformStack {
   public vpc: Vpc;
@@ -49,11 +50,7 @@ class EnvironmentStack extends TerraformStack {
   constructor(scope: Construct, name: string) {
     super(scope, name);
     
-    const ourAwsProvider = new AwsProvider(this, "AWS");
-    console.log(ourAwsProvider.profile, "profile") // try this again
-    console.log(ourAwsProvider.region, "region")
-    console.log(ourAwsProvider.secretKey, "secret key")
-    console.log(ourAwsProvider.accessKey, "access key")
+    new AwsProvider(this, "AWS");
 
     this.vpc = createVpc(this, `cs-${envName}-vpc`)
     const gateway = createInternetGateway(this, `cs-${envName}-internet-gateway`, this.vpc.id)
@@ -98,12 +95,12 @@ class ServiceStack extends TerraformStack {
     createAlbListener(this, `cs-${envName}-alb-listener`, appLoadBalancer.arn, albTargetGroup.arn);
 
     const cluster = createCluster(this, `cs-${envName}-cluster`);
-    const executionRole = createExecutionRole(this, `cs-${envName}-execution-role`);
+    const executionRole = createExecutionRole(this, `cs-${envName}-execution-role`, s3Arn);
     const taskRole = createTaskRole(this, `cs-${envName}-task-role`);
     const logGroup = createLogGroup(this, `ecs/cs-${envName}-loggroup`);
 
     const taskDefinition = createTaskDefinition(this, `cs-${envName}-task-definition`, executionRole.arn, taskRole.arn, logGroup.name, port, image, containerName, s3Arn);
-
+    
     createService(this, `cs-${envName}-service`, cluster.arn, taskDefinition.arn, pubSubId1, pubSubId2, securityGroup.id, albTargetGroup.arn, port, containerName);
   }
 }
