@@ -28,11 +28,20 @@ import createLogGroup from "./resources/create_log_group";
 import { Vpc } from '@cdktf/provider-aws/lib/vpc';
 import { Subnet } from '@cdktf/provider-aws/lib/subnet';
 
-const dummyObj = {
+const dummyEnvObj = {
   envName: "hello"
 }
 
-const envName = dummyObj.envName;
+const envName = dummyEnvObj.envName;
+
+const dummyServiceObj = {
+  port: 8080,
+  image: "",
+  environment: [],
+  containerName: "adot-app"
+}
+
+const { port, image, environment, containerName } = dummyServiceObj;
 
 class EnvironmentStack extends TerraformStack {
   public vpc: Vpc;
@@ -41,8 +50,13 @@ class EnvironmentStack extends TerraformStack {
   constructor(scope: Construct, name: string) {
     super(scope, name);
     
-    new AwsProvider(this, "AWS");
-    this.vpc = createVpc(this, `cs-${envName}-vpc`) // policy for creating vpc?
+    const ourAwsProvider = new AwsProvider(this, "AWS");
+    console.log(ourAwsProvider.profile, "profile") // try this again
+    console.log(ourAwsProvider.region, "region")
+    console.log(ourAwsProvider.secretKey, "secret key")
+    console.log(ourAwsProvider.accessKey, "access key")
+
+    this.vpc = createVpc(this, `cs-${envName}-vpc`)
     const gateway = createInternetGateway(this, `cs-${envName}-internet-gateway`, this.vpc.id)
 
     this.pubSub1 = createSubnet(this, `cs-${envName}-public-1`, this.vpc.id, true, "us-east-2a", "172.31.0.0/20")
@@ -74,7 +88,7 @@ class ServiceStack extends TerraformStack {
 
     new AwsProvider(this, "AWS");
 
-    const securityGroup = createSecurityGroup(this, `cs-${envName}-security-group`, vpcId);
+    const securityGroup = createSecurityGroup(this, `cs-${envName}-security-group`, vpcId, port);
 
     const lbSecurityGroup = createAlbSecurityGroup(this, `cs-${envName}-alb-security-group`, vpcId);
 
@@ -85,13 +99,13 @@ class ServiceStack extends TerraformStack {
     createAlbListener(this, `cs-${envName}-alb-listener`, appLoadBalancer.arn, albTargetGroup.arn);
 
     const cluster = createCluster(this, `cs-${envName}-cluster`);
-    const executionRole = createExecutionRole(this, `cs-${envName}-execution-role`); // name interpolated within
-    const taskRole = createTaskRole(this, `cs-${envName}-task-role`); // name interpolated within
+    const executionRole = createExecutionRole(this, `cs-${envName}-execution-role`);
+    const taskRole = createTaskRole(this, `cs-${envName}-task-role`);
     const logGroup = createLogGroup(this, `ecs/cs-${envName}-loggroup`);
 
-    const taskDefinition = createTaskDefinition(this, `cs-${envName}-task-definition`, executionRole.arn, taskRole.arn, logGroup.name);
+    const taskDefinition = createTaskDefinition(this, `cs-${envName}-task-definition`, executionRole.arn, taskRole.arn, logGroup.name, port, image, environment, containerName);
 
-    createService(this, `cs-${envName}-service`, cluster.arn, taskDefinition.arn, pubSubId1, pubSubId2, securityGroup.id, albTargetGroup.arn);
+    createService(this, `cs-${envName}-service`, cluster.arn, taskDefinition.arn, pubSubId1, pubSubId2, securityGroup.id, albTargetGroup.arn, port, containerName);
   }
 }
 
