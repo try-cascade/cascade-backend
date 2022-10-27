@@ -29,19 +29,18 @@ import { Vpc } from '@cdktf/provider-aws/lib/vpc';
 import { Subnet } from '@cdktf/provider-aws/lib/subnet';
 
 const dummyEnvObj = {
-  envName: "hello"
+  envName: "hello",
+  s3Arn: ""
 }
-
-const envName = dummyEnvObj.envName;
 
 const dummyServiceObj = {
   port: 8080,
   image: "",
-  environment: [],
   containerName: "adot-app"
 }
 
-const { port, image, environment, containerName } = dummyServiceObj;
+const { envName, s3Arn } = dummyEnvObj;
+const { port, image, containerName } = dummyServiceObj;
 
 class EnvironmentStack extends TerraformStack {
   public vpc: Vpc;
@@ -103,7 +102,7 @@ class ServiceStack extends TerraformStack {
     const taskRole = createTaskRole(this, `cs-${envName}-task-role`);
     const logGroup = createLogGroup(this, `ecs/cs-${envName}-loggroup`);
 
-    const taskDefinition = createTaskDefinition(this, `cs-${envName}-task-definition`, executionRole.arn, taskRole.arn, logGroup.name, port, image, environment, containerName);
+    const taskDefinition = createTaskDefinition(this, `cs-${envName}-task-definition`, executionRole.arn, taskRole.arn, logGroup.name, port, image, containerName, s3Arn);
 
     createService(this, `cs-${envName}-service`, cluster.arn, taskDefinition.arn, pubSubId1, pubSubId2, securityGroup.id, albTargetGroup.arn, port, containerName);
   }

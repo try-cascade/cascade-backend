@@ -9,5 +9,5 @@ cdktf.log
 tsconfig.tsbuildinfo
 !jest.config.js
 !setup.js
-secret
 today.md
+.env
