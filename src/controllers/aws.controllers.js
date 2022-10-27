@@ -109,8 +109,6 @@ async function environment(req, res) {
   } catch (err) {
     console.log("Error", err);
   }
-
-
 }
 
 module.exports = {
