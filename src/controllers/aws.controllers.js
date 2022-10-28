@@ -49,11 +49,6 @@ async function createBucket(req, res) {
 }
 
 /*
-"AWS_ACCESS_KEY_ID=AKIA3SGCWF2BRQ2V3EXW",
-  "AWS_REGION=us-east-2",
-  "AWS_SECRET_ACCESS_KEY=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",
-  "BUCKET=yueun-bucket-from-sdk"
-
 Payload
 {
   "app": "name"
