@@ -3,6 +3,9 @@ const { S3Client, CreateBucketCommand, PutObjectCommand, GetObjectCommand, ListB
 
 const { IAMClient, GetUserCommand } = require("@aws-sdk/client-iam");
 
+let app;
+let env;
+
 async function applications(req, res) {
   const s3Client = new S3Client();
   try {
@@ -40,9 +43,10 @@ async function createBucket(req, res) {
   const userResponse = await user.send(getUser);
 
   const id = userResponse.User.Arn.match(/\d+/)[0]
+  app = req.body.name;
 
   const client = new S3Client();
-  const command = new CreateBucketCommand({ Bucket: "cascade-" + req.body.name.toLowerCase() + "-" + id })
+  const command = new CreateBucketCommand({ Bucket: "cascade-" + app.toLowerCase() + "-" + id })
   const response = await client.send(command)
 
   res.status(200).json(response)
@@ -67,7 +71,7 @@ async function addEnvironmentToBucket(req, res) {
 
   const id = userResponse.User.Arn.match(/\d+/)[0]
 
-  const env = {
+  const envVariables = {
     Bucket: "cascade-" + req.body.app.toLowerCase() + "-" + id,
     Key: `${req.body.env}/.env`,
     Body: `AWS_ACCESS_KEY_ID=${req.body.accessKey}
@@ -76,14 +80,16 @@ async function addEnvironmentToBucket(req, res) {
     BUCKET=${req.body.bucket}`
   }
 
+  env = req.body.env;
+
   const services = {
     Bucket: "cascade-" + req.body.app.toLowerCase() + "-" + id,
-    Key: `${req.body.env}/services.json`,
-    Body: JSON.stringify({ containers: [], s3Arn: `arn:aws:s3:::cascade-${req.body.env}-${id}`})
+    Key: `${env}/services.json`,
+    Body: JSON.stringify({ envName: env, containers: [], s3Arn: `arn:aws:s3:::cascade-${env}-${id}`})
   }
 
   const client = new S3Client();
-  const createEnv = new PutObjectCommand(env);
+  const createEnv = new PutObjectCommand(envVariables);
   const createServices = new PutObjectCommand(services);
   await client.send(createEnv);
   await client.send(createServices);
@@ -236,8 +242,8 @@ async function services(req, res) {
   const s3Client = new S3Client();
 
   const bucketParams = {
-    Bucket: "cascade-" + req.params.app.toLowerCase() + "-" + id,
-    Key: `${req.params.env}/services.json`,
+    Bucket: "cascade-" + app.toLowerCase() + "-" + id,
+    Key: `${env}/services.json`,
   }
 
   try {
