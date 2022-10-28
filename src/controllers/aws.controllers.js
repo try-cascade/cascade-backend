@@ -1,7 +1,20 @@
 // const { ECSClient, ListClustersCommand } = require("@aws-sdk/client-ecs");
-const { S3Client, CreateBucketCommand, PutObjectCommand, GetObjectCommand } = require("@aws-sdk/client-s3");
+const { S3Client, CreateBucketCommand, PutObjectCommand, GetObjectCommand, ListBucketsCommand } = require("@aws-sdk/client-s3");
 
 const { IAMClient, GetUserCommand } = require("@aws-sdk/client-iam");
+
+async function applications(req, res) {
+  const s3Client = new S3Client();
+  try {
+    const data = await s3Client.send(new ListBucketsCommand({}));
+    console.log("Success", data.Buckets);
+    const applications = data.Buckets.filter(bucket => bucket.Name.startsWith('cascade'))
+
+    res.status(200).json({applications}) // For unit tests.
+  } catch (err) {
+    console.log("Error", err);
+  }
+}
 
 
 // async function clusters(req, res) {
@@ -254,6 +267,7 @@ async function services(req, res) {
 }
 
 module.exports = {
+  applications,
   // clusters,
   createBucket,
   addEnvironmentToBucket,

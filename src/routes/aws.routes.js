@@ -7,6 +7,8 @@ const awsController = require('../controllers/aws.controllers')
 
 router.post('/bucket', awsController.createBucket)
 
+router.get('/applications', awsController.applications)
+
 router.post('/environment', awsController.addEnvironmentToBucket)
 
 // router.get('/:app/environment/:env', awsController.environment)
