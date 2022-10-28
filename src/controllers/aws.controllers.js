@@ -53,10 +53,6 @@ async function createBucket(req, res) {
 }
 
 /*
-"AWS_ACCESS_KEY_ID=,
-  "AWS_REGION=",
-  "AWS_SECRET_ACCESS_KEY=",
-  "BUCKET="
 
 Payload
 {
@@ -76,7 +72,7 @@ async function addEnvironmentToBucket(req, res) {
 
   const id = userResponse.User.Arn.match(/\d+/)[0]
 
-  const env = {
+  const envVariables = {
     Bucket: "cascade-" + req.body.app.toLowerCase() + "-" + id,
     Key: `${req.body.env}/.env`,
     Body: `AWS_ACCESS_KEY_ID=${req.body.accessKey}
@@ -90,11 +86,11 @@ async function addEnvironmentToBucket(req, res) {
   const services = {
     Bucket: "cascade-" + req.body.app.toLowerCase() + "-" + id,
     Key: `${env}/services.json`,
-    Body: JSON.stringify({ containers: [], s3Arn: `arn:aws:s3:::cascade-${env}-${id}`})
+    Body: JSON.stringify({ envName: env, containers: [], s3Arn: `arn:aws:s3:::cascade-${env}-${id}`})
   }
 
   const client = new S3Client();
-  const createEnv = new PutObjectCommand(env);
+  const createEnv = new PutObjectCommand(envVariables);
   const createServices = new PutObjectCommand(services);
   await client.send(createEnv);
   await client.send(createServices);

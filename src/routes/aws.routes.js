@@ -15,6 +15,6 @@ router.post('/environment', awsController.addEnvironmentToBucket)
 
 router.post('/service', awsController.addServiceToBucket)
 
-router.get('/:app/environment/:env/services', awsController.services)
+router.get('/services', awsController.services)
 
 module.exports = router

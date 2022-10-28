@@ -18,6 +18,8 @@ import createTaskDefinition from "./resources/create_task_definition";
 import createALB from "./resources/create_app_load_balancer";
 import createAlbTargetGroup from "./resources/create_alb_target_group";
 import createAlbListener from "./resources/create_alb_listener";
+// import createAlbTargetGroups from "./resources/utils/create_alb_target_groups";
+// import createAlbListeners from "./resources/utils/create_alb_listeners";
 
 import createSecurityGroup from "./resources/create_security_group";
 import createAlbSecurityGroup from "./resources/create_alb_security_group";
@@ -29,18 +31,24 @@ import { Vpc } from '@cdktf/provider-aws/lib/vpc';
 import { Subnet } from '@cdktf/provider-aws/lib/subnet';
 
 const dummyEnvObj = {
-  envName: "hello",
-  s3Arn: ""
+  envName: "hello"
 }
 
 const dummyServiceObj = {
-  port: 8080,
-  image: "",
-  containerName: "adot-app"
+  containers: [
+    {
+      port: 8080,
+      image: "",
+      name: "",
+      s3ArnEnv: "",
+    }
+  ],
+  s3Arn: ""
 }
 
-const { envName, s3Arn } = dummyEnvObj;
-const { port, image, containerName } = dummyServiceObj;
+
+const { envName } = dummyEnvObj;
+const { containers, s3Arn } = dummyServiceObj;
 
 class EnvironmentStack extends TerraformStack {
   public vpc: Vpc;
@@ -49,11 +57,7 @@ class EnvironmentStack extends TerraformStack {
   constructor(scope: Construct, name: string) {
     super(scope, name);
     
-    const ourAwsProvider = new AwsProvider(this, "AWS");
-    console.log(ourAwsProvider.profile, "profile") // try this again
-    console.log(ourAwsProvider.region, "region")
-    console.log(ourAwsProvider.secretKey, "secret key")
-    console.log(ourAwsProvider.accessKey, "access key")
+    new AwsProvider(this, "AWS");
 
     this.vpc = createVpc(this, `cs-${envName}-vpc`)
     const gateway = createInternetGateway(this, `cs-${envName}-internet-gateway`, this.vpc.id)
@@ -87,24 +91,28 @@ class ServiceStack extends TerraformStack {
 
     new AwsProvider(this, "AWS");
 
-    const securityGroup = createSecurityGroup(this, `cs-${envName}-security-group`, vpcId, port);
+    const securityGroup = createSecurityGroup(this, `cs-${envName}-security-group`, vpcId, containers[0]);
 
     const lbSecurityGroup = createAlbSecurityGroup(this, `cs-${envName}-alb-security-group`, vpcId);
 
     const appLoadBalancer = createALB(this, `cs-${envName}-lb`, lbSecurityGroup.id, pubSubId1, pubSubId2);
 
+    // const albTargetGroups = createAlbTargetGroups(this, vpcId, envName, containers)
+
     const albTargetGroup = createAlbTargetGroup(this, `cs-${envName}-target-group`, vpcId);
   
+    // createAlbListeners(this, appLoadBalancer.arn, envName, albTargetGroups) // invokes all listeners
+
     createAlbListener(this, `cs-${envName}-alb-listener`, appLoadBalancer.arn, albTargetGroup.arn);
 
     const cluster = createCluster(this, `cs-${envName}-cluster`);
-    const executionRole = createExecutionRole(this, `cs-${envName}-execution-role`);
+    const executionRole = createExecutionRole(this, `cs-${envName}-execution-role`, s3Arn);
     const taskRole = createTaskRole(this, `cs-${envName}-task-role`);
     const logGroup = createLogGroup(this, `ecs/cs-${envName}-loggroup`);
 
-    const taskDefinition = createTaskDefinition(this, `cs-${envName}-task-definition`, executionRole.arn, taskRole.arn, logGroup.name, port, image, containerName, s3Arn);
-
-    createService(this, `cs-${envName}-service`, cluster.arn, taskDefinition.arn, pubSubId1, pubSubId2, securityGroup.id, albTargetGroup.arn, port, containerName);
+    const taskDefinition = createTaskDefinition(this, `cs-${envName}-task-definition`, executionRole.arn, taskRole.arn, logGroup.name, containers, s3Arn);
+    
+    createService(this, `cs-${envName}-service`, cluster.arn, taskDefinition.arn, pubSubId1, pubSubId2, securityGroup.id, albTargetGroup.arn, envName, containers[0]);
   }
 }
 
