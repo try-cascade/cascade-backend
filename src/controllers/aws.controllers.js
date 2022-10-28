@@ -3,6 +3,9 @@ const { S3Client, CreateBucketCommand, PutObjectCommand, GetObjectCommand, ListB
 
 const { IAMClient, GetUserCommand } = require("@aws-sdk/client-iam");
 
+let app;
+let env;
+
 async function applications(req, res) {
   const s3Client = new S3Client();
   try {
@@ -40,19 +43,20 @@ async function createBucket(req, res) {
   const userResponse = await user.send(getUser);
 
   const id = userResponse.User.Arn.match(/\d+/)[0]
+  app = req.body.name;
 
   const client = new S3Client();
-  const command = new CreateBucketCommand({ Bucket: "cascade-" + req.body.name.toLowerCase() + "-" + id })
+  const command = new CreateBucketCommand({ Bucket: "cascade-" + app.toLowerCase() + "-" + id })
   const response = await client.send(command)
 
   res.status(200).json(response)
 }
 
 /*
-"AWS_ACCESS_KEY_ID=AKIA3SGCWF2BRQ2V3EXW",
-  "AWS_REGION=us-east-2",
-  "AWS_SECRET_ACCESS_KEY=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",
-  "BUCKET=yueun-bucket-from-sdk"
+"AWS_ACCESS_KEY_ID=,
+  "AWS_REGION=",
+  "AWS_SECRET_ACCESS_KEY=",
+  "BUCKET="
 
 Payload
 {
@@ -81,10 +85,12 @@ async function addEnvironmentToBucket(req, res) {
     BUCKET=${req.body.bucket}`
   }
 
+  env = req.body.env;
+
   const services = {
     Bucket: "cascade-" + req.body.app.toLowerCase() + "-" + id,
-    Key: `${req.body.env}/services.json`,
-    Body: JSON.stringify({ containers: [], s3Arn: `arn:aws:s3:::cascade-${req.body.env}-${id}`})
+    Key: `${env}/services.json`,
+    Body: JSON.stringify({ containers: [], s3Arn: `arn:aws:s3:::cascade-${env}-${id}`})
   }
 
   const client = new S3Client();
@@ -142,7 +148,7 @@ app name
 //   } catch (err) {
 //     console.log("Error", err);
 //   }
-// }
+// }.
 
 /*
 Payload:
@@ -241,8 +247,8 @@ async function services(req, res) {
   const s3Client = new S3Client();
 
   const bucketParams = {
-    Bucket: "cascade-" + req.params.app.toLowerCase() + "-" + id,
-    Key: `${req.params.env}/services.json`,
+    Bucket: "cascade-" + app.toLowerCase() + "-" + id,
+    Key: `${env}/services.json`,
   }
 
   try {
