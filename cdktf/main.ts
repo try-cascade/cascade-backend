@@ -18,6 +18,8 @@ import createTaskDefinition from "./resources/create_task_definition";
 import createALB from "./resources/create_app_load_balancer";
 import createAlbTargetGroup from "./resources/create_alb_target_group";
 import createAlbListener from "./resources/create_alb_listener";
+// import createAlbTargetGroups from "./resources/utils/create_alb_target_groups";
+// import createAlbListeners from "./resources/utils/create_alb_listeners";
 
 import createSecurityGroup from "./resources/create_security_group";
 import createAlbSecurityGroup from "./resources/create_alb_security_group";
@@ -37,14 +39,8 @@ const dummyServiceObj = {
     {
       port: 8080,
       image: "",
-      name: "8080-will-work",
-      s3ArnEnv: ""
-    },
-    {
-      port: 8081,
-      image: "",
-      name: "8081-will-not-work",
-      s3ArnEnv: ""
+      name: "",
+      s3ArnEnv: "",
     }
   ],
   s3Arn: ""
@@ -95,15 +91,17 @@ class ServiceStack extends TerraformStack {
 
     new AwsProvider(this, "AWS");
 
-    const securityGroup = createSecurityGroup(this, `cs-${envName}-security-group`, vpcId, containers);
+    const securityGroup = createSecurityGroup(this, `cs-${envName}-security-group`, vpcId, containers[0]);
 
     const lbSecurityGroup = createAlbSecurityGroup(this, `cs-${envName}-alb-security-group`, vpcId);
 
     const appLoadBalancer = createALB(this, `cs-${envName}-lb`, lbSecurityGroup.id, pubSubId1, pubSubId2);
 
+    // const albTargetGroups = createAlbTargetGroups(this, vpcId, envName, containers)
+
     const albTargetGroup = createAlbTargetGroup(this, `cs-${envName}-target-group`, vpcId);
   
-    // createAlbListeners(this, `cs-${envName}-alb-listener`, appLoadBalancer.arn, albTargetGroup.arn, containers) -- for organization? see create_alb_target_groups.ts
+    // createAlbListeners(this, appLoadBalancer.arn, envName, albTargetGroups) // invokes all listeners
 
     createAlbListener(this, `cs-${envName}-alb-listener`, appLoadBalancer.arn, albTargetGroup.arn);
 
@@ -114,7 +112,7 @@ class ServiceStack extends TerraformStack {
 
     const taskDefinition = createTaskDefinition(this, `cs-${envName}-task-definition`, executionRole.arn, taskRole.arn, logGroup.name, containers, s3Arn);
     
-    createService(this, `cs-${envName}-service`, cluster.arn, taskDefinition.arn, pubSubId1, pubSubId2, securityGroup.id, albTargetGroup.arn, envName, containers);
+    createService(this, `cs-${envName}-service`, cluster.arn, taskDefinition.arn, pubSubId1, pubSubId2, securityGroup.id, albTargetGroup.arn, envName, containers[0]);
   }
 }
 

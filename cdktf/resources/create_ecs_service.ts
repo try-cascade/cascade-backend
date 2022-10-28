@@ -1,14 +1,14 @@
 import { EcsService } from "@cdktf/provider-aws/lib/ecs-service"
 
-export default function createService(scope: any, name: string, clusterArn: string, taskDefinitionArn: string, subnet1: string, subnet2: string, securityGroup: string, targetGroupArn: string, envName: string, containerArr: any) {
+export default function createService(scope: any, name: string, clusterArn: string, taskDefinitionArn: string, subnet1: string, subnet2: string, securityGroup: string, targetGroupArn: string, envName: string, container: any) {
 
-  const containerObjs = containerArr.map((container: { port: number; name: string; }) => {
-    return {
-      containerPort: container.port,
-      containerName: `cs-${container.name}-container`,
-      targetGroupArn: targetGroupArn,
-    }
-  })
+  // const containerObjs = containerArr.map((container: { port: number; name: string; }, idx: number) => {
+  //   return {
+  //     containerPort: container.port,
+  //     containerName: `cs-${container.name}-container`,
+  //     targetGroupArn: targetGroups[idx].arn,
+  //   }
+  // })
 
   const service = new EcsService(scope, name, {
     name: `cs-${envName}-ecs-service`,
@@ -23,7 +23,11 @@ export default function createService(scope: any, name: string, clusterArn: stri
         securityGroups: [securityGroup]
       },
     loadBalancer: [
-      ...containerObjs
+      {
+        containerPort: container.port,
+        containerName: `cs-${container.name}-container`,
+        targetGroupArn,
+      }
     ],
     tags: {
       Name: name
