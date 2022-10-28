@@ -1,32 +1,35 @@
 import { SecurityGroup } from "@cdktf/provider-aws/lib/security-group";
 
 // pass in user app's port (currently hard-coded)
-export default function createSecurityGroup(scope: any, name: string, vpcId: string, port: number) {
+export default function createSecurityGroup(scope: any, name: string, vpcId: string, containerArr: any) {
+
+  const containerObjs = containerArr.map((container: { port: number }) => {
+    return {
+      protocol: "TCP",
+      fromPort: container.port, // user-specific port
+      toPort: container.port,
+      cidrBlocks: ["0.0.0.0/0"],
+      ipv6CidrBlocks: ["::/0"],
+    }
+  })
+
   const securityGroup = new SecurityGroup(scope, name, {
-      vpcId: vpcId,
-      tags: {
-        Name: name
+    vpcId: vpcId,
+    tags: {
+      Name: name
+    },
+    ingress: [
+      ...containerObjs
+    ],
+    egress: [
+      {
+        fromPort: 0,
+        toPort: 0,
+        protocol: "-1",
+        cidrBlocks: ["0.0.0.0/0"],
+        ipv6CidrBlocks: ["::/0"],
       },
-      ingress: [
-        // allow HTTP traffic from everywhere
-        {
-          protocol: "TCP",
-          fromPort: port, // user-specific port
-          toPort: port,
-          cidrBlocks: ["0.0.0.0/0"],
-          ipv6CidrBlocks: ["::/0"],
-        },
-      ],
-      egress: [
-        // allow all traffic to every destination
-        {
-          fromPort: 0,
-          toPort: 0,
-          protocol: "-1",
-          cidrBlocks: ["0.0.0.0/0"],
-          ipv6CidrBlocks: ["::/0"],
-        },
-      ],
+    ],
   });
 
   return securityGroup;

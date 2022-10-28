@@ -1,6 +1,6 @@
-export default function containerDefinitions(logGroupName: string, port: number, image: string, containerName: string, s3Arn: string) {
-  return [
-    {
+export default function containerDefinitions(logGroupName: string, containerArr: any, s3Arn: string) {
+  const containerObjs = containerArr.map((container: { port: number, image: string, s3ArnEnv: string, name: string }) => {
+    return {
       logConfiguration: {
         "logDriver": "awslogs",
         "secretOptions": null,
@@ -12,28 +12,31 @@ export default function containerDefinitions(logGroupName: string, port: number,
       },
       portMappings: [
         {
-          "hostPort": port,
+          "hostPort": container.port,
           "protocol": "tcp",
-          "containerPort": port
+          "containerPort": container.port
         }
       ],
       command: null,
       cpu: 0,
       environmentFiles: [
         {
-          "value": `${s3Arn}/.env`,
+          "value": container.s3ArnEnv,
           "type": "s3"
         }
       ],
-      image,
+      image: container.image,
       dependsOn: [
         {
           "containerName": "cs-adot-collector-container",
           "condition": "START"
         }
       ],
-      name: `cs-${containerName}-container`
-    },
+      name: `cs-${container.name}-container`
+    }
+  })
+  return [
+    ...containerObjs,
     {
       logConfiguration: {
         "logDriver": "awslogs",

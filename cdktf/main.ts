@@ -33,15 +33,26 @@ const dummyEnvObj = {
 }
 
 const dummyServiceObj = {
-  port: 8080,
-  image: "",
-  containerName: "adot-app",
+  containers: [
+    {
+      port: 8080,
+      image: "",
+      name: "8080-will-work",
+      s3ArnEnv: ""
+    },
+    {
+      port: 8081,
+      image: "",
+      name: "8081-will-not-work",
+      s3ArnEnv: ""
+    }
+  ],
   s3Arn: ""
 }
 
 
 const { envName } = dummyEnvObj;
-const { port, image, containerName, s3Arn } = dummyServiceObj;
+const { containers, s3Arn } = dummyServiceObj;
 
 class EnvironmentStack extends TerraformStack {
   public vpc: Vpc;
@@ -84,7 +95,7 @@ class ServiceStack extends TerraformStack {
 
     new AwsProvider(this, "AWS");
 
-    const securityGroup = createSecurityGroup(this, `cs-${envName}-security-group`, vpcId, port);
+    const securityGroup = createSecurityGroup(this, `cs-${envName}-security-group`, vpcId, containers);
 
     const lbSecurityGroup = createAlbSecurityGroup(this, `cs-${envName}-alb-security-group`, vpcId);
 
@@ -92,6 +103,8 @@ class ServiceStack extends TerraformStack {
 
     const albTargetGroup = createAlbTargetGroup(this, `cs-${envName}-target-group`, vpcId);
   
+    // createAlbListeners(this, `cs-${envName}-alb-listener`, appLoadBalancer.arn, albTargetGroup.arn, containers) -- for organization? see create_alb_target_groups.ts
+
     createAlbListener(this, `cs-${envName}-alb-listener`, appLoadBalancer.arn, albTargetGroup.arn);
 
     const cluster = createCluster(this, `cs-${envName}-cluster`);
@@ -99,9 +112,9 @@ class ServiceStack extends TerraformStack {
     const taskRole = createTaskRole(this, `cs-${envName}-task-role`);
     const logGroup = createLogGroup(this, `ecs/cs-${envName}-loggroup`);
 
-    const taskDefinition = createTaskDefinition(this, `cs-${envName}-task-definition`, executionRole.arn, taskRole.arn, logGroup.name, port, image, containerName, s3Arn);
+    const taskDefinition = createTaskDefinition(this, `cs-${envName}-task-definition`, executionRole.arn, taskRole.arn, logGroup.name, containers, s3Arn);
     
-    createService(this, `cs-${envName}-service`, cluster.arn, taskDefinition.arn, pubSubId1, pubSubId2, securityGroup.id, albTargetGroup.arn, port, containerName);
+    createService(this, `cs-${envName}-service`, cluster.arn, taskDefinition.arn, pubSubId1, pubSubId2, securityGroup.id, albTargetGroup.arn, envName, containers);
   }
 }
 
