@@ -58,8 +58,8 @@ class EnvironmentStack extends TerraformStack {
     this.vpc = createVpc(this, `cs-${envName}-vpc`)
     const gateway = createInternetGateway(this, `cs-${envName}-internet-gateway`, this.vpc.id)
 
-    this.pubSub1 = createSubnet(this, `cs-${envName}-public-1`, this.vpc.id, true, "us-east-2a", "172.31.0.0/20")
-    this.pubSub2 = createSubnet(this, `cs-${envName}-public-2`, this.vpc.id, true, "us-east-2b", "172.31.16.0/20")
+    this.pubSub1 = createSubnet(this, `cs-${envName}-public-1`, this.vpc.id, true, "us-east-1a", "172.31.0.0/20")
+    this.pubSub2 = createSubnet(this, `cs-${envName}-public-2`, this.vpc.id, true, "us-east-1b", "172.31.16.0/20")
     
     const table = createRouteTable(this, `cs-${envName}-table-1`, this.vpc.id)
 
