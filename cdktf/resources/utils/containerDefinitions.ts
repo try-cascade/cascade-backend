@@ -1,4 +1,4 @@
-export default function containerDefinitions(logGroupName: string, containerArr: any, s3Arn: string) {
+export default function containerDefinitions(logGroupName: string, containerArr: any, s3Arn: string, envName: string) {
   const containerObjs = containerArr.map((container: { port: number, image: string, s3ArnEnv: string, name: string }) => {
     return {
       logConfiguration: {
@@ -68,7 +68,7 @@ export default function containerDefinitions(logGroupName: string, containerArr:
       cpu: 0,
       environmentFiles: [
         {
-          "value": `${s3Arn}/.env`,
+          "value": `${s3Arn}/${envName}/.env`,
           "type": "s3"
         }
       ],

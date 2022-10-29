@@ -1,7 +1,7 @@
 import { EcsTaskDefinition } from "@cdktf/provider-aws/lib/ecs-task-definition";
 import containerDefinitions from "./utils/containerDefinitions";
 
-export default function createTaskDefinition(scope: any, name: string, executionRole: string, taskRole: string, logGroupName: string, containerArr: any, s3Arn: string) {
+export default function createTaskDefinition(scope: any, name: string, executionRole: string, taskRole: string, logGroupName: string, containerArr: any, s3Arn: string, envName: string) {
   const taskDefinition = new EcsTaskDefinition(scope, name, {
     family: name,
     memory: "1GB",
@@ -10,7 +10,7 @@ export default function createTaskDefinition(scope: any, name: string, execution
     requiresCompatibilities: ["FARGATE"],
     executionRoleArn: executionRole, // can pull ecr image (not used yet)
     taskRoleArn: taskRole, // can push logs to cloudwatch
-    containerDefinitions: JSON.stringify(containerDefinitions(logGroupName, containerArr, s3Arn)),
+    containerDefinitions: JSON.stringify(containerDefinitions(logGroupName, containerArr, s3Arn, envName)),
     tags: {
       Name: name
     }
