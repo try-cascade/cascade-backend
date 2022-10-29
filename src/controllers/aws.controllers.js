@@ -10,7 +10,6 @@ async function applications(req, res) {
   const s3Client = new S3Client();
   try {
     const data = await s3Client.send(new ListBucketsCommand({}));
-    console.log("Success", data.Buckets);
     const applications = data.Buckets.filter(bucket => bucket.Name.startsWith('cascade'))
 
     res.status(200).json({applications}) // For unit tests.
@@ -61,7 +60,6 @@ Payload
   "accessKey": "key"
   "region": "region"
   "secretKey": "secret"
-  "bucket": "bucketFromSdk"
 }
 */
 
@@ -75,10 +73,11 @@ async function addEnvironmentToBucket(req, res) {
   const envVariables = {
     Bucket: "cascade-" + req.body.app.toLowerCase() + "-" + id,
     Key: `${req.body.env}/.env`,
-    Body: `AWS_ACCESS_KEY_ID=${req.body.accessKey}\nAWS_REGION=${req.body.region}\nAWS_SECRET_ACCESS_KEY=${req.body.secretKey}\nBUCKET=${req.body.bucket}`
+    Body: `AWS_ACCESS_KEY_ID=${req.body.accessKey}\nAWS_REGION=${req.body.region}\nAWS_SECRET_ACCESS_KEY=${req.body.secretKey}`
   }
 
   env = req.body.env;
+  console.log(req.body)
 
   const services = {
     Bucket: "cascade-" + req.body.app.toLowerCase() + "-" + id,
@@ -168,12 +167,13 @@ async function addServiceToBucket(req, res) {
 
   const id = userResponse.User.Arn.match(/\d+/)[0]
 
-
   const s3Client = new S3Client();
   const bucketParams = {
     Bucket: "cascade-" + req.body.app.toLowerCase() + "-" + id,
     Key: `${req.body.env}/services.json`,
   }
+
+  console.log(req.body)
 
   try {
     // Create a helper function to convert a ReadableStream to a string.
