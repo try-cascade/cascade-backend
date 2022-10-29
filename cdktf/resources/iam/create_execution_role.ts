@@ -38,7 +38,16 @@ export default function createExecutionRole(scope: any, name: string, s3Arn: str
                 "s3:GetObject"
               ],
               "Resource": [
-                `${s3Arn}/.env` //"arn:aws:s3:::cascade-hello-bucket/.env"
+                `${s3Arn}/*/.env` //"arn:aws:s3:::cascade-hello-bucket/.env"
+              ]
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObject"
+              ],
+              "Resource": [
+                `${s3Arn}/*/*/.env` //"arn:aws:s3:::cascade-hello-bucket/.env"
               ]
             },
             {

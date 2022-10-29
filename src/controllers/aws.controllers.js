@@ -3,8 +3,8 @@ const { S3Client, CreateBucketCommand, PutObjectCommand, GetObjectCommand, ListB
 
 const { IAMClient, GetUserCommand } = require("@aws-sdk/client-iam");
 
-let app;
-let env;
+let app = 'hello'; // we may need cascade db to store this value since it's set when bucket is created. why? when we want to destroy and need to GET /services, we won't be creating the bucket again, and `app` is undefined, which causes the app crash
+let env = 'hello-env';
 
 async function applications(req, res) {
   const s3Client = new S3Client();
@@ -75,10 +75,7 @@ async function addEnvironmentToBucket(req, res) {
   const envVariables = {
     Bucket: "cascade-" + req.body.app.toLowerCase() + "-" + id,
     Key: `${req.body.env}/.env`,
-    Body: `AWS_ACCESS_KEY_ID=${req.body.accessKey}
-    AWS_REGION=${req.body.region}
-    AWS_SECRET_ACCESS_KEY=${req.body.secretKey}
-    BUCKET=${req.body.bucket}`
+    Body: `AWS_ACCESS_KEY_ID=${req.body.accessKey}\nAWS_REGION=${req.body.region}\nAWS_SECRET_ACCESS_KEY=${req.body.secretKey}\nBUCKET=${req.body.bucket}`
   }
 
   env = req.body.env;
@@ -86,7 +83,7 @@ async function addEnvironmentToBucket(req, res) {
   const services = {
     Bucket: "cascade-" + req.body.app.toLowerCase() + "-" + id,
     Key: `${env}/services.json`,
-    Body: JSON.stringify({ envName: env, containers: [], s3Arn: `arn:aws:s3:::cascade-${env}-${id}`})
+    Body: JSON.stringify({ envName: env, containers: [], s3Arn: `arn:aws:s3:::cascade-${app}-${id}`})
   }
 
   const client = new S3Client();
@@ -197,12 +194,12 @@ async function addServiceToBucket(req, res) {
 
     const service = {
       name: req.body.service,
-      port: req.body.port,
-      image: req.body.image,
+      port: Number(req.body.port),
+      image: req.body.image
     }
 
     if (req.body.var) {
-      service["s3Arn"] = `arn:aws:s3:::cascade-${req.body.app}-${id}/${req.body.env}/${req.body.service}/.env` // Only has this if there are .env vars
+      service["s3ArnEnv"] = `arn:aws:s3:::cascade-${req.body.app}-${id}/${req.body.env}/${req.body.service}/.env` // Only has this if there are .env vars
 
       const env = {
         Bucket: "cascade-" + req.body.app.toLowerCase() + "-" + id,
