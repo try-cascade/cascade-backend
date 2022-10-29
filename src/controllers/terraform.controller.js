@@ -18,7 +18,7 @@ function create(req, res) {
 }
 
 function deploy(req, res) {
-  const child = spawn('cdktf deploy --auto-approve', {
+  const child = spawn('cdktf deploy --auto-approve', { // add "*-stack"?
     stdio: 'inherit',
     shell: true,
     cwd: '../cdktf'
