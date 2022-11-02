@@ -3,8 +3,8 @@ const { S3Client, CreateBucketCommand, PutObjectCommand, GetObjectCommand, ListB
 
 const { IAMClient, GetUserCommand } = require("@aws-sdk/client-iam");
 
-let app = 'hello'; // we may need cascade db to store this value since it's set when bucket is created. why? when we want to destroy and need to GET /services, we won't be creating the bucket again, and `app` is undefined, which causes the app crash
-let env = 'hello-env';
+let app;
+let env;
 
 async function applications(req, res) {
   const s3Client = new S3Client();
@@ -41,7 +41,7 @@ async function createBucket(req, res) {
   const getUser = new GetUserCommand(user);
   const userResponse = await user.send(getUser);
 
-  const id = userResponse.User.Arn.match(/\d+/)[0]
+  const id = userResponse.User.Arn.match(/\d+/)[0]; // we want the account id to be in the services.json
   app = req.body.name;
 
   const client = new S3Client();
@@ -77,12 +77,11 @@ async function addEnvironmentToBucket(req, res) {
   }
 
   env = req.body.env;
-  console.log(req.body)
 
   const services = {
     Bucket: "cascade-" + req.body.app.toLowerCase() + "-" + id,
     Key: `${env}/services.json`,
-    Body: JSON.stringify({ envName: env, containers: [], s3Arn: `arn:aws:s3:::cascade-${app}-${id}`})
+    Body: JSON.stringify({ envName: env, region: req.body.region, credentials: { accessKeyId: req.body.accessKey, secretAccessKey: req.body.secretKey }, containers: [], s3Arn: `arn:aws:s3:::cascade-${app}-${id}`})
   }
 
   const client = new S3Client();
