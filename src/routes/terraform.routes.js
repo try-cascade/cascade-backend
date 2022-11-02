@@ -13,4 +13,7 @@ router.post('/destroy', terraformController.destroy)
 
 router.post('/uploadEnvironment', terraformController.uploadS3EnvironmentObject)
 
+// dummy route for test
+router.get('/msg', terraformController.msg)
+
 module.exports = router

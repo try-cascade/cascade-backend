@@ -3,8 +3,8 @@ const { S3Client, CreateBucketCommand, PutObjectCommand, GetObjectCommand, ListB
 
 const { IAMClient, GetUserCommand } = require("@aws-sdk/client-iam");
 
-let app;
-let env;
+let app = "hello";
+let env = "hello-env";
 
 async function applications(req, res) {
   const s3Client = new S3Client();
