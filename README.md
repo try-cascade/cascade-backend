@@ -3,9 +3,9 @@ Make sure you have node installed with npm. Node version 16 or greater. Install 
 
 In cdktf folder:
 
-Type in command: npm install -g cdktf-cli
-Type: npm install
+Type in command: `npm install -g cdktf-cli`
+Type: `npm install`
 In server folder:
 
-run npm install
-npm start --- in the future have this start both front and backends
+run `npm install`
+`npm start` --- in the future have this start both front and backends

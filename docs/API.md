@@ -1,17 +1,17 @@
-POST /terraform/generate
+POST `/terraform/generate`
 
 No payload expected
 
 If status 200 is returned creates a json file in the cdktf directory based on user presets
 
 
-POST /terraform/deploy
+POST `/terraform/deploy`
 
 No payload expected
 
 If status 200 is returned deploys the json terraform environment to AWS
 
-POST /aws/bucket
+POST `/aws/bucket`
 
 payload:
 
@@ -22,7 +22,7 @@ payload:
 If bad request, return 400
 If success return 200
 
-POST /terraform/environment
+POST `/terraform/environment`
 
 payload:
 
@@ -36,7 +36,7 @@ Note: dashes should be used between words
 If bad request, return 400
 If success return 200
 
-POST /terraform/service
+POST `/terraform/service`
 
 payload:
 

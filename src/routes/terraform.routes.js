@@ -8,6 +8,10 @@ router.post('/generate', terraformController.create)
 // Deploys infrastructure to AWS
 router.post('/deploy', terraformController.deploy)
 
-router.post('/uploadEnvironment', terraformController.uploadS3EnvironmentObject)
+// Destroys infrastructure from AWS
+router.post('/destroy', terraformController.destroy)
+
+// Uploads the TF json files to S3
+router.post('/upload', terraformController.upload)
 
 module.exports = router

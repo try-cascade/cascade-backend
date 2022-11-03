@@ -1,3 +1,4 @@
+import axios from "axios";
 import { Construct } from "constructs";
 import { App, TerraformStack } from "cdktf";
 import { AwsProvider } from "@cdktf/provider-aws/lib/provider";
@@ -18,6 +19,8 @@ import createTaskDefinition from "./resources/create_task_definition";
 import createALB from "./resources/create_app_load_balancer";
 import createAlbTargetGroup from "./resources/create_alb_target_group";
 import createAlbListener from "./resources/create_alb_listener";
+// import createAlbTargetGroups from "./resources/utils/create_alb_target_groups";
+// import createAlbListeners from "./resources/utils/create_alb_listeners";
 
 import createSecurityGroup from "./resources/create_security_group";
 import createAlbSecurityGroup from "./resources/create_alb_security_group";
@@ -28,38 +31,20 @@ import createLogGroup from "./resources/create_log_group";
 import { Vpc } from '@cdktf/provider-aws/lib/vpc';
 import { Subnet } from '@cdktf/provider-aws/lib/subnet';
 
-const dummyEnvObj = {
-  envName: "hello",
-  s3Arn: ""
-}
-
-const dummyServiceObj = {
-  port: 8080,
-  image: "",
-  containerName: "adot-app"
-}
-
-const { envName, s3Arn } = dummyEnvObj;
-const { port, image, containerName } = dummyServiceObj;
-
 class EnvironmentStack extends TerraformStack {
   public vpc: Vpc;
   public pubSub1: Subnet;
   public pubSub2: Subnet;
-  constructor(scope: Construct, name: string) {
+  constructor(scope: Construct, name: string, envName: string) {
     super(scope, name);
     
-    const ourAwsProvider = new AwsProvider(this, "AWS");
-    console.log(ourAwsProvider.profile, "profile") // try this again
-    console.log(ourAwsProvider.region, "region")
-    console.log(ourAwsProvider.secretKey, "secret key")
-    console.log(ourAwsProvider.accessKey, "access key")
+    new AwsProvider(this, "AWS");
 
     this.vpc = createVpc(this, `cs-${envName}-vpc`)
     const gateway = createInternetGateway(this, `cs-${envName}-internet-gateway`, this.vpc.id)
 
-    this.pubSub1 = createSubnet(this, `cs-${envName}-public-1`, this.vpc.id, true, "us-east-1a", "172.31.0.0/20")
-    this.pubSub2 = createSubnet(this, `cs-${envName}-public-2`, this.vpc.id, true, "us-east-1b", "172.31.16.0/20")
+    this.pubSub1 = createSubnet(this, `cs-${envName}-public-1`, this.vpc.id, true, "us-east-2a", "172.31.0.0/20")
+    this.pubSub2 = createSubnet(this, `cs-${envName}-public-2`, this.vpc.id, true, "us-east-2b", "172.31.16.0/20")
     
     const table = createRouteTable(this, `cs-${envName}-table-1`, this.vpc.id)
 
@@ -80,40 +65,72 @@ interface ServiceStackConfig {
 }
 
 class ServiceStack extends TerraformStack {
-  constructor(scope: Construct, name: string, config: ServiceStackConfig) {
+  constructor(scope: Construct, name: string, services: Services, config: ServiceStackConfig) {
     super(scope, name);
 
     const { vpcId, pubSubId1, pubSubId2 } = config;
+    const { envName, containers, s3Arn } = services;
 
     new AwsProvider(this, "AWS");
 
-    const securityGroup = createSecurityGroup(this, `cs-${envName}-security-group`, vpcId, port);
+    const securityGroup = createSecurityGroup(this, `cs-${envName}-security-group`, vpcId, containers[0]);
 
     const lbSecurityGroup = createAlbSecurityGroup(this, `cs-${envName}-alb-security-group`, vpcId);
 
     const appLoadBalancer = createALB(this, `cs-${envName}-lb`, lbSecurityGroup.id, pubSubId1, pubSubId2);
 
+    // const albTargetGroups = createAlbTargetGroups(this, vpcId, envName, containers)
+
     const albTargetGroup = createAlbTargetGroup(this, `cs-${envName}-target-group`, vpcId);
   
+    // createAlbListeners(this, appLoadBalancer.arn, envName, albTargetGroups) // invokes all listeners
+
     createAlbListener(this, `cs-${envName}-alb-listener`, appLoadBalancer.arn, albTargetGroup.arn);
 
     const cluster = createCluster(this, `cs-${envName}-cluster`);
-    const executionRole = createExecutionRole(this, `cs-${envName}-execution-role`);
+    const executionRole = createExecutionRole(this, `cs-${envName}-execution-role`, s3Arn);
     const taskRole = createTaskRole(this, `cs-${envName}-task-role`);
     const logGroup = createLogGroup(this, `ecs/cs-${envName}-loggroup`);
 
-    const taskDefinition = createTaskDefinition(this, `cs-${envName}-task-definition`, executionRole.arn, taskRole.arn, logGroup.name, port, image, containerName, s3Arn);
-
-    createService(this, `cs-${envName}-service`, cluster.arn, taskDefinition.arn, pubSubId1, pubSubId2, securityGroup.id, albTargetGroup.arn, port, containerName);
+    const taskDefinition = createTaskDefinition(this, `cs-${envName}-task-definition`, executionRole.arn, taskRole.arn, logGroup.name, containers, s3Arn, envName);
+    
+    createService(this, `cs-${envName}-service`, cluster.arn, taskDefinition.arn, pubSubId1, pubSubId2, securityGroup.id, albTargetGroup.arn, envName, containers[0]);
   }
 }
 
-const app = new App();
-const env = new EnvironmentStack(app, "env-stack");
-new ServiceStack(app, "service-stack", {
-  vpcId: env.vpc.id,
-  pubSubId1: env.pubSub1.id,
-  pubSubId2: env.pubSub2.id,
-});
+// const app = new App();
+// const env = new EnvironmentStack(app, "env-stack");
+// new ServiceStack(app, "service-stack", {
+//   vpcId: env.vpc.id,
+//   pubSubId1: env.pubSub1.id,
+//   pubSubId2: env.pubSub2.id,
+// });
 
-app.synth();
+// app.synth();
+
+interface Services {
+  envName: string,
+  containers: any,
+  s3Arn: string
+}
+
+async function createStacks() {
+  try {
+    const { data } = await axios.get<Services>('http://localhost:3005/aws/services');
+
+    const app = new App();
+    const env = new EnvironmentStack(app, "env-stack", data.envName);
+
+    new ServiceStack(app, "service-stack", data, {
+      vpcId: env.vpc.id,
+      pubSubId1: env.pubSub1.id,
+      pubSubId2: env.pubSub2.id,
+    });
+
+    app.synth();
+  } catch (e) {
+    console.log(e)
+  } 
+}
+
+createStacks();
