@@ -17,6 +17,9 @@ router.post('/service', awsController.addServiceToBucket)
 
 router.get('/services', awsController.services)
 
+router.get('/website', awsController.website)
+
 router.get('/terraform', awsController.terraform)
+
 
 module.exports = router

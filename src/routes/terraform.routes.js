@@ -9,9 +9,13 @@ router.post('/generate', terraformController.create)
 router.post('/deploy', terraformController.deploy)
 
 // Destroys infrastructure from AWS
-router.post('/destroy', terraformController.destroy)
+// router.post('/destroy', terraformController.destroy) 
+router.get('/destroy', terraformController.destroy) // testing sse with get
 
 // Uploads the TF json files to S3
 router.post('/upload', terraformController.upload)
+
+// dummy route for test
+router.get('/msg', terraformController.msg)
 
 module.exports = router
