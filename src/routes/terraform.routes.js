@@ -12,7 +12,8 @@ router.post('/deploy', terraformController.deploy)
 // router.post('/destroy', terraformController.destroy) 
 router.get('/destroy', terraformController.destroy) // testing sse with get
 
-router.post('/uploadEnvironment', terraformController.uploadS3EnvironmentObject)
+// Uploads the TF json files to S3
+router.post('/upload', terraformController.upload)
 
 // dummy route for test
 router.get('/msg', terraformController.msg)

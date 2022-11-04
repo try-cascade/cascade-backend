@@ -66,6 +66,13 @@ async function website(req, res) {
   }
 }
 
+/*
+Payload:
+{
+  "name": <appName>
+}
+*/
+
 async function createBucket(req, res) {
   const user = new IAMClient();
   const getUser = new GetUserCommand(user);
@@ -121,55 +128,6 @@ async function addEnvironmentToBucket(req, res) {
   await client.send(createServices);
   res.status(200).json({message: "Success"})
 }
-
-/*
-Needed info:
-app name
-*/
-
-// Realized that since we don't really have anything other than the name of the environment to go off it is weird to have a path to get the name, if we already have the name...
-// async function environment(req, res) {
-//   const user = new IAMClient();
-//   const getUser = new GetUserCommand(user);
-//   const userResponse = await user.send(getUser);
-
-//   const id = userResponse.User.Arn.match(/\d+/)[0]
-
-//   const s3Client = new S3Client();
-//   const bucketParams = {async function clusters(req, res) {
-//   try {
-//     const client = new ECSClient();
-//     const command = new ListClustersCommand(5);
-//     const response = await client.send(command);
-
-//     res.status(200).json({clusters: response.clusterArns})
-//   } catch (e) {
-//     res.status(400).json({error: "Make sure you have used the AWS cli to configure your access keys"})
-//   }
-// }
-
-// async function vpcs(req, res) {
-
-// }
-//     // Create a helper function to convert a ReadableStream to a string.
-//     const streamToString = (stream) =>
-//       new Promise((resolve, reject) => {
-//         const chunks = [];
-//         stream.on("data", (chunk) => chunks.push(chunk));
-//         stream.on("error", reject);
-//         stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
-//       });
-
-//     // Get the object from the Amazon S3 bucket. It is returned as a ReadableStream.
-//     const response = await s3Client.send(new GetObjectCommand(bucketParams));
-
-//     // Convert the ReadableStream to a string.
-//     const bodyContents = await streamToString(response.Body);
-//     res.status(200).json(JSON.parse(bodyContents))
-//   } catch (err) {
-//     console.log("Error", err);
-//   }
-// }.
 
 /*
 Payload:
@@ -294,6 +252,55 @@ async function services(req, res) {
   }
 }
 
+async function terraform(req, res) {
+  // create a route to find the app name and env name later
+  let app = "cat"
+  let env = "test"
+
+  const user = new IAMClient();
+  const getUser = new GetUserCommand(user);
+  const userResponse = await user.send(getUser);
+
+  const id = userResponse.User.Arn.match(/\d+/)[0]
+
+  const s3Client = new S3Client();
+
+  const envStack = {
+    Bucket: "cascade-" + app.toLowerCase() + "-" + id,
+    Key: `${env}/env-stack/cdk.tf.json`,
+  }
+
+  const serviceStack = {
+    Bucket: "cascade-" + app.toLowerCase() + "-" + id,
+    Key: `${env}/services-stack/cdk.tf.json`,
+  }
+
+  try {
+    // Create a helper function to convert a ReadableStream to a string.
+    const streamToString = (stream) =>
+      new Promise((resolve, reject) => {
+        const chunks = [];
+        stream.on("data", (chunk) => chunks.push(chunk));
+        stream.on("error", reject);
+        stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
+      });
+
+    // Get the object from the Amazon S3 bucket. It is returned as a ReadableStream.
+    let environment = await s3Client.send(new GetObjectCommand(envStack));
+    let services = await s3Client.send(new GetObjectCommand(serviceStack));
+
+    environment = await streamToString(environment.Body)
+    services = await streamToString(services.Body)
+
+    environment = JSON.parse(environment)
+    services = JSON.parse(services)
+
+    res.status(200).json({ environment, services })
+  } catch (err) {
+    console.log("Error", err);
+  }
+}
+
 module.exports = {
   applications,
   // clusters,
@@ -302,5 +309,6 @@ module.exports = {
   // environment,
   addServiceToBucket,
   services,
-  website
+  website,
+  terraform
 }

@@ -12,7 +12,6 @@ const { spawn } = require("child_process");
 
 // client.stream.write(`data: ${JSON.stringify(phoneBook)}\n\n`) // res open to frontend
 
-
 function create(req, res) {
   const child = spawn('cdktf synth', {
     stdio: 'inherit',
@@ -129,8 +128,42 @@ function destroy(req, res) {
   });
 }
 
-function uploadS3EnvironmentObject(req, res) {
+/*
+Payload:
+{
+  "app": "name",
+  "env": "name"
+}
+*/
 
+// backend: use the generate route to put the tf.json file to the bucket after synth
+// UI: add support for editing the tf.json file
+// - let user upload new tf.json
+// push all versions to S3 (we want all copies as S3 supports versioning
+
+async function upload(req, res) {
+  const user = new IAMClient();
+  const getUser = new GetUserCommand(user);
+  const userResponse = await user.send(getUser);
+
+  const id = userResponse.User.Arn.match(/\d+/)[0]
+
+  await uploadS3EnvStack(id, req)
+  const response = await uploadS3ServicesStack(id, req)
+
+  res.status(200).json(response)
+}
+
+async function uploadS3EnvStack(id, req) {
+  const bucketParams = {
+    Bucket: "cascade-" + req.body.app.toLowerCase() + "-" + id,
+    Key: `${req.body.env}/env-stack/cdk.tf.json`,
+    Body: fs.createReadStream('./cdktf/cdktf.out/stacks/env-stack/cdk.tf.json')
+  }
+
+  const client = new S3Client();
+  const command = new PutObjectCommand(bucketParams);
+  await client.send(command);
 }
 
 // dummy
@@ -185,10 +218,25 @@ function msg(req, res) {
   });
 }
 
+async function uploadS3ServicesStack(id, req) {
+  const bucketParams = {
+    Bucket: "cascade-" + req.body.app.toLowerCase() + "-" + id,
+    Key: `${req.body.env}/services-stack/cdk.tf.json`,
+    Body: fs.createReadStream('./cdktf/cdktf.out/stacks/service-stack/cdk.tf.json')
+  }
+
+  const client = new S3Client();
+  const command = new PutObjectCommand(bucketParams);
+  const response = await client.send(command);
+  return response
+}
+
+
 module.exports = {
   create,
   deploy,
   destroy,
   uploadS3EnvironmentObject,
   msg
+  upload
 }
