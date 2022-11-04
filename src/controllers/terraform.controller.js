@@ -178,7 +178,7 @@ function msg(req, res) {
 
   // res.connection.setTimeout(0);
 
-  var spw = spawn('cdktf synth', { // deploy "*-stack" --auto-approve
+  var spw = spawn('cdktf deploy "*-stack" --auto-approve', { // deploy "*-stack" --auto-approve
     stdio: ['inherit', 'pipe'],
     shell: true,
     cwd: './cdktf'
@@ -236,7 +236,6 @@ module.exports = {
   create,
   deploy,
   destroy,
-  uploadS3EnvironmentObject,
-  msg
+  msg,
   upload
 }
