@@ -1,5 +1,7 @@
 // const { ECSClient, ListClustersCommand } = require("@aws-sdk/client-ecs");
+const { EC2Client, DescribeVpcsCommand } = require("@aws-sdk/client-ec2"); 
 const { S3Client, CreateBucketCommand, PutObjectCommand, GetObjectCommand, ListBucketsCommand } = require("@aws-sdk/client-s3");
+const { ElasticLoadBalancingV2, DescribeLoadBalancersCommand } = require("@aws-sdk/client-elastic-load-balancing-v2");
 
 const { IAMClient, GetUserCommand } = require("@aws-sdk/client-iam");
 
@@ -31,10 +33,38 @@ async function applications(req, res) {
 //   }
 // }
 
-// async function vpcs(req, res) {
+async function vpcStatus(req, res) {
+  const input = {
+    Filters: [
+      { 
+        name: "tag", 
+        value: { Name: `cs-${envName}-vpc` }
+      }
+    ]
+  }
+  const client = new EC2Client();
+  const command = new DescribeVpcsCommand(input);
+  try {
+    const response = await client.send(command);
+    console.log(response.Vpcs, "<--- all Vpcs")
+    console.log(response.Vpcs[0].State, "<--- response from AWS")
+    res.status(200).json({ state: response.Vpcs[0].State })
+  } catch(e) {
+    res.status(200).json({ error: "not found" })
+  }
+}
 
-// }
-
+async function website(req, res) {
+  const client = new ElasticLoadBalancingV2();
+  const command = new DescribeLoadBalancersCommand({ Names: [`cs-hello-env-lb`]}); // get envName later
+  try {
+    const response = await client.send(command) // handle error
+    const dnsName = response.LoadBalancers[0].DNSName;
+    res.status(200).json({ url: `http://${dnsName}`})
+  } catch(e) {
+    res.status(200).json({ error: "not found" })
+  }
+}
 
 async function createBucket(req, res) {
   const user = new IAMClient();
@@ -271,5 +301,6 @@ module.exports = {
   addEnvironmentToBucket,
   // environment,
   addServiceToBucket,
-  services
+  services,
+  website
 }

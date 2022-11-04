@@ -46,12 +46,12 @@ class EnvironmentStack extends TerraformStack {
     this.pubSub1 = createSubnet(this, `cs-${envName}-public-1`, this.vpc.id, true, "us-east-2a", "172.31.0.0/20")
     this.pubSub2 = createSubnet(this, `cs-${envName}-public-2`, this.vpc.id, true, "us-east-2b", "172.31.16.0/20")
     
-    const table = createRouteTable(this, `cs-${envName}-table-1`, this.vpc.id)
+    const table = createRouteTable(this, `cs-${envName}-table`, this.vpc.id)
 
     createRouteTableAssociation(this, `cs-${envName}-sub-assoc-1`, this.pubSub1.id, table.id)
     createRouteTableAssociation(this, `cs-${envName}-sub-assoc-2`, this.pubSub2.id, table.id)
 
-    createRoute(this, `cs-${envName}-route-1`, table.id, gateway.id)
+    createRoute(this, `cs-${envName}-route`, table.id, gateway.id)
 
     // createSubnet(this, "cascade-private-1", aws_vpc.id, false, "us-east-1a", "10.0.3.0/24")
     // createSubnet(this, "cascade-private-2", aws_vpc.id, false, "us-east-1b", "10.0.4.0/24")

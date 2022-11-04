@@ -9,7 +9,8 @@ router.post('/generate', terraformController.create)
 router.post('/deploy', terraformController.deploy)
 
 // Destroys infrastructure from AWS
-router.post('/destroy', terraformController.destroy)
+// router.post('/destroy', terraformController.destroy) 
+router.get('/destroy', terraformController.destroy) // testing sse with get
 
 router.post('/uploadEnvironment', terraformController.uploadS3EnvironmentObject)
 
