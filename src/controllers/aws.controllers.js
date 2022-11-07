@@ -33,12 +33,12 @@ async function applications(req, res) {
 //   }
 // }
 
-async function vpcStatus(req, res) {
+async function vpc(req, res) {
   const input = {
     Filters: [
-      { 
-        name: "tag", 
-        value: { Name: `cs-${envName}-vpc` }
+      {
+        name: "tag",
+        // value: { Name: `cs-${envName}-vpc` }
       }
     ]
   }
@@ -46,10 +46,18 @@ async function vpcStatus(req, res) {
   const command = new DescribeVpcsCommand(input);
   try {
     const response = await client.send(command);
-    console.log(response.Vpcs, "<--- all Vpcs")
-    console.log(response.Vpcs[0].State, "<--- response from AWS")
-    res.status(200).json({ state: response.Vpcs[0].State })
+
+    const namedTag = response.Vpcs.filter(vpc => {
+      if (!vpc.Tags) return
+      return vpc.Tags.some(tag => {
+        if (!tag.Value) return
+        return tag.Value.startsWith('cs-') // Assumes our environments will always start with cs
+      })
+    })
+
+    res.status(200).json({ vpc: namedTag[0] })
   } catch(e) {
+    console.log(await e)
     res.status(200).json({ error: "not found" })
   }
 }
@@ -310,5 +318,6 @@ module.exports = {
   addServiceToBucket,
   services,
   website,
-  terraform
+  terraform,
+  vpc
 }
