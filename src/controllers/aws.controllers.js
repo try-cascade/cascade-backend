@@ -204,8 +204,6 @@ async function addServiceToBucket(req, res) {
       }
     });
 
-    console.log(services, "<---- services")
-
     /*
     from Frontend
     const body = [{
@@ -220,7 +218,8 @@ async function addServiceToBucket(req, res) {
     }]
     */
     for (let i = 0; i < req.body.length; i++) {
-      if (req.body[i].var) {
+      console.log(req.body[i].var, "<--- req body's first var") // [""]
+      if (req.body[i].var && req.body[i].var[0].length > 0) {
         req.body[i]["s3ArnEnv"] = `arn:aws:s3:::cascade-${req.body[i].app}-${id}/${req.body[i].env}/${req.body[i].service}/.env` // Only has this if there are .env vars
   
         const env = {
