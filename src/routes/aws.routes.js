@@ -21,5 +21,7 @@ router.get('/website', awsController.website)
 
 router.get('/terraform', awsController.terraform)
 
+router.get('/vpc', awsController.vpc)
+
 
 module.exports = router
