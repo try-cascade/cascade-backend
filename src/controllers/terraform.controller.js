@@ -231,11 +231,46 @@ async function uploadS3ServicesStack(id, req) {
   return response
 }
 
+// for debugging
+function deployNoStream(req, res) {
+  const child = spawn('cdktf deploy "*-stack" --auto-approve', {
+    stdio: 'inherit',
+    shell: true,
+    cwd: './cdktf'
+  });
+
+  child.on("close", (message) => {
+    if (message === 0) {
+      res.status(200).json({ message: "infrastructure should now be seen in your AWS environment" })
+    } else {
+      res.status(400).json({ message: "Something went wrong with creating your infrastructure" }) // might be nice to determine what might make this happen
+    }
+  })
+}
+
+// for debugging
+function destroyNoStream(req, res) {
+  const child = spawn('cdktf destroy "*-stack" --auto-approve', {
+    stdio: 'inherit',
+    shell: true,
+    cwd: './cdktf'
+  });
+
+  child.on("close", (message) => {
+    if (message === 0) {
+      res.status(200).json({ message: "infrastructure should now be removed from your AWS environment" })
+    } else {
+      res.status(400).json({ message: "Something went wrong with destroying your infrastructure" }) // might be nice to determine what might make this happen
+    }
+  })
+}
 
 module.exports = {
   create,
   deploy,
   destroy,
   msg,
-  upload
+  upload,
+  deployNoStream,
+  destroyNoStream
 }

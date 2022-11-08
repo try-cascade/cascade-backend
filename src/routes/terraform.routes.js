@@ -18,4 +18,8 @@ router.post('/upload', terraformController.upload)
 // dummy route for test
 router.get('/msg', terraformController.msg)
 
+// created for debugging
+router.get('/deployNoStream', terraformController.deployNoStream)
+router.get('/destroyNoStream', terraformController.destroyNoStream)
+
 module.exports = router
