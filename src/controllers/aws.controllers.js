@@ -5,8 +5,8 @@ const { ElasticLoadBalancingV2, DescribeLoadBalancersCommand } = require("@aws-s
 
 const { IAMClient, GetUserCommand } = require("@aws-sdk/client-iam");
 
-let app = "hello";
-let env = "hello-env";
+let app;// = "hello";
+let env;// = "hello-env";
 
 async function applications(req, res) {
   const s3Client = new S3Client();
@@ -156,11 +156,22 @@ async function addServiceToBucket(req, res) {
 
   const s3Client = new S3Client();
   const bucketParams = {
-    Bucket: "cascade-" + req.body.app.toLowerCase() + "-" + id,
-    Key: `${req.body.env}/services.json`,
+    // Bucket: "cascade-" + req.body.app.toLowerCase() + "-" + id,
+    Bucket: "cascade-" + req.body[0].app.toLowerCase() + "-" + id,
+    Key: `${req.body[0].env}/services.json`,
   }
 
-  console.log(req.body)
+  console.log(req.body[0], "<--- from line 164")
+
+  // {
+  //   app: 'jk',
+  //   env: 'rg',
+  //   service: 'service',
+  //   image: 'image',
+  //   port: 3003,
+  //   type: 'frontend',
+  //   frontFacingPath: '/'
+  // }
 
   try {
     // Create a helper function to convert a ReadableStream to a string.
@@ -179,31 +190,56 @@ async function addServiceToBucket(req, res) {
     let bodyContents = await streamToString(response.Body);
     const client = new S3Client();
 
-    const service = {
-      name: req.body.service,
-      port: Number(req.body.port),
-      image: req.body.image
-    }
+    // const service = { // we are getting an array of objects; we want n number of services (depending on the arr length)
+    //   name: req.body.service,
+    //   port: Number(req.body.port),
+    //   image: req.body.image
+    // }
 
-    if (req.body.var) {
-      service["s3ArnEnv"] = `arn:aws:s3:::cascade-${req.body.app}-${id}/${req.body.env}/${req.body.service}/.env` // Only has this if there are .env vars
-
-      const env = {
-        Bucket: "cascade-" + req.body.app.toLowerCase() + "-" + id,
-        Key: `${req.body.env}/${req.body.service}/.env`,
-        Body: req.body.var.join("\n")
+    const services = req.body.map(serv => {
+      return {
+        name: serv.service,
+        port: Number(serv.port),
+        image: serv.image
       }
+    });
 
-      const addService = new PutObjectCommand(env);
-      await client.send(addService);
+    /*
+    from Frontend
+    const body = [{
+      app: appName,
+      env: envName,
+      service: "service", // change back to `name`
+      image: "image", // change back to image
+      port: 3003, // change back to port
+      type: "frontend",
+      frontFacingPath: "/",
+      // var: envVars.split(", ")
+    }]
+    */
+    for (let i = 0; i < req.body.length; i++) {
+      console.log(req.body[i].var, "<--- req body's first var") // [""]
+      if (req.body[i].var && req.body[i].var[0].length > 0) {
+        req.body[i]["s3ArnEnv"] = `arn:aws:s3:::cascade-${req.body[i].app}-${id}/${req.body[i].env}/${req.body[i].service}/.env` // Only has this if there are .env vars
+  
+        const env = {
+          Bucket: "cascade-" + req.body[i].app.toLowerCase() + "-" + id,
+          Key: `${req.body[i].env}/${req.body[i].service}/.env`,
+          Body: req.body[i].var.join("\n")
+        }
+  
+        const addService = new PutObjectCommand(env);
+        await client.send(addService);
+      }
     }
 
     bodyContents = JSON.parse(bodyContents)
-    bodyContents.containers.push(service)
+    bodyContents.containers = services
+    // bodyContents.containers.push(service)
 
     const bucketInfo = {
-      Bucket: "cascade-" + req.body.app.toLowerCase() + "-" + id,
-      Key: `${req.body.env}/services.json`,
+      Bucket: "cascade-" + req.body[0].app.toLowerCase() + "-" + id,
+      Key: `${req.body[0].env}/services.json`,
       Body: JSON.stringify(bodyContents)
     }
 
