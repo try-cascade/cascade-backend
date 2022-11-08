@@ -5,8 +5,8 @@ const { ElasticLoadBalancingV2, DescribeLoadBalancersCommand } = require("@aws-s
 
 const { IAMClient, GetUserCommand } = require("@aws-sdk/client-iam");
 
-let app;// = "hello";
-let env;// = "hello-env";
+let app = "11081147";
+let env = "11081147-env";
 
 async function applications(req, res) {
   const s3Client = new S3Client();
@@ -64,7 +64,7 @@ async function vpc(req, res) {
 
 async function website(req, res) {
   const client = new ElasticLoadBalancingV2();
-  const command = new DescribeLoadBalancersCommand({ Names: [`cs-hello-env-lb`]}); // get envName later
+  const command = new DescribeLoadBalancersCommand({ Names: [`cs-${env}-lb`]}); // get envName later
   try {
     const response = await client.send(command) // handle error
     const dnsName = response.LoadBalancers[0].DNSName;
@@ -228,7 +228,7 @@ async function addServiceToBucket(req, res) {
     for (let i = 0; i < req.body.length; i++) {
       console.log(req.body[i].var, "<--- req body's first var") // [""]
       if (req.body[i].var && req.body[i].var[0].length > 0) {
-        req.body[i]["s3ArnEnv"] = `arn:aws:s3:::cascade-${req.body[i].app}-${id}/${req.body[i].env}/${req.body[i].service}/.env` // Only has this if there are .env vars
+        services[i]["s3ArnEnv"] = `arn:aws:s3:::cascade-${req.body[i].app}-${id}/${req.body[i].env}/${req.body[i].service}/.env` // Only has this if there are .env vars
   
         const env = {
           Bucket: "cascade-" + req.body[i].app.toLowerCase() + "-" + id,
