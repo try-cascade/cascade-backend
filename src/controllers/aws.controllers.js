@@ -5,8 +5,8 @@ const { ElasticLoadBalancingV2, DescribeLoadBalancersCommand } = require("@aws-s
 
 const { IAMClient, GetUserCommand } = require("@aws-sdk/client-iam");
 
-let app = "11081147";
-let env = "11081147-env";
+let app = "cat";
+let env = "test";
 
 async function applications(req, res) {
   const s3Client = new S3Client();
