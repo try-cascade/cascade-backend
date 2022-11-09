@@ -1,18 +1,27 @@
 // const { ECSClient, ListClustersCommand } = require("@aws-sdk/client-ecs");
 const { EC2Client, DescribeVpcsCommand } = require("@aws-sdk/client-ec2"); 
-const { S3Client, CreateBucketCommand, PutObjectCommand, GetObjectCommand, ListBucketsCommand } = require("@aws-sdk/client-s3");
+const { S3Client, CreateBucketCommand, PutObjectCommand, GetObjectCommand, ListBucketsCommand, ListObjectsCommand } = require("@aws-sdk/client-s3");
 const { ElasticLoadBalancingV2, DescribeLoadBalancersCommand } = require("@aws-sdk/client-elastic-load-balancing-v2");
 
 const { IAMClient, GetUserCommand } = require("@aws-sdk/client-iam");
 
-let app = "11081147";
-let env = "11081147-env";
+let app;
+let env;
 
 async function applications(req, res) {
   const s3Client = new S3Client();
   try {
     const data = await s3Client.send(new ListBucketsCommand({}));
     const applications = data.Buckets.filter(bucket => bucket.Name.startsWith('cascade'))
+
+    console.log(applications, "<--- applications applications")
+    console.log(applications[0].Name.match(/\-(.*?)\-/)[1], "<--- applications name")
+    if (applications) app = applications[0].Name.match(/\-(.*?)\-/)[1]
+
+    const s3Data = await s3Client.send(new ListObjectsCommand({ Bucket: applications[0].Name })); // ?
+    console.log(s3Data.Contents[0].Key.match(/(.*?)\//)[1], "<--- list objects command data");
+    
+    if (app) env = s3Data.Contents[0].Key.match(/(.*?)\//)[1]
 
     res.status(200).json({applications}) // For unit tests.
   } catch (err) {
