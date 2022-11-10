@@ -8,6 +8,7 @@ const { IAMClient, GetUserCommand } = require("@aws-sdk/client-iam");
 let app = "0433"
 let env = "0433-env";
 
+
 async function applications(req, res) {
   const s3Client = new S3Client();
   try {
