@@ -23,5 +23,7 @@ router.get('/terraform', awsController.terraform)
 
 router.get('/vpc', awsController.vpc)
 
+// app.get('/account', checkUser, routes.account);
+
 
 module.exports = router
