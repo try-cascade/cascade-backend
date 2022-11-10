@@ -23,7 +23,6 @@ router.get('/terraform', awsController.terraform)
 
 router.get('/vpc', awsController.vpc)
 
-// app.get('/account', checkUser, routes.account);
-
+router.delete('/:name', awsController.removeServiceFromBucket)
 
 module.exports = router
