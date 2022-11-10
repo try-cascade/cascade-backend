@@ -5,8 +5,8 @@ const { ElasticLoadBalancingV2, DescribeLoadBalancersCommand } = require("@aws-s
 
 const { IAMClient, GetUserCommand } = require("@aws-sdk/client-iam");
 
-let app = "0609"
-let env = "0609-env";
+let app = "empty"
+let env = "empty";
 
 
 async function applications(req, res) {
@@ -137,7 +137,7 @@ async function addEnvironmentToBucket(req, res) {
   const services = {
     Bucket: "cascade-" + req.body.app.toLowerCase() + "-" + id,
     Key: `${env}/services.json`,
-    Body: JSON.stringify({ envName: env, region: req.body.region, credentials: { accessKeyId: req.body.accessKey, secretAccessKey: req.body.secretKey }, containers: [], s3Arn: `arn:aws:s3:::cascade-${app}-${id}`})
+    Body: JSON.stringify({ appName: app, envName: env, region: req.body.region, credentials: { accessKeyId: req.body.accessKey, secretAccessKey: req.body.secretKey }, containers: [], s3Arn: `arn:aws:s3:::cascade-${app}-${id}`})
   }
 
   const client = new S3Client();
@@ -172,6 +172,8 @@ async function addServiceToBucket(req, res) {
   const userResponse = await user.send(getUser);
 
   const id = userResponse.User.Arn.match(/\d+/)[0]
+
+  console.log(req.body, "request body from add service to bucket")
 
   const s3Client = new S3Client();
   const bucketParams = {
