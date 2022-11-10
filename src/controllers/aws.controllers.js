@@ -298,8 +298,8 @@ async function services(req, res) {
 
 async function terraform(req, res) {
   // create a route to find the app name and env name later
-  let app = "cat"
-  let env = "test"
+  // let app = "cat"
+  // let env = "test"
 
   const user = new IAMClient();
   const getUser = new GetUserCommand(user);
@@ -345,6 +345,60 @@ async function terraform(req, res) {
   }
 }
 
+async function removeServiceFromBucket(req, res) {
+  // create a route to find the app name and env name later
+  // let app = "cat"
+  // let env = "test"
+
+  const user = new IAMClient();
+  const getUser = new GetUserCommand(user);
+  const userResponse = await user.send(getUser);
+
+  const id = userResponse.User.Arn.match(/\d+/)[0]
+
+  const s3Client = new S3Client();
+
+  const servicesLocation = {
+    Bucket: "cascade-" + app.toLowerCase() + "-" + id,
+    Key: `${env}/services.json`,
+  }
+
+  try {
+    // Create a helper function to convert a ReadableStream to a string.
+    const streamToString = (stream) =>
+      new Promise((resolve, reject) => {
+        const chunks = [];
+        stream.on("data", (chunk) => chunks.push(chunk));
+        stream.on("error", reject);
+        stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
+      });
+
+    // Get the object from the Amazon S3 bucket. It is returned as a ReadableStream.
+    let services = await s3Client.send(new GetObjectCommand(servicesLocation));
+    services = await streamToString(services.Body)
+    services = JSON.parse(services)
+
+    console.log(req.params.name)
+    // remove service from services.json
+    services.containers = services.containers.filter(service => service.name !== req.params.name)
+
+    const bucketInfo = {
+      Bucket: "cascade-" + app.toLowerCase() + "-" + id,
+      Key: `${env}/services.json`,
+      Body: JSON.stringify(services)
+    }
+
+    console.log(services)
+
+    const modifyService = new PutObjectCommand(bucketInfo);
+    await s3Client.send(modifyService);
+
+    res.status(200).json({ services })
+  } catch (err) {
+    console.log("Error", err);
+  }
+}
+
 module.exports = {
   applications,
   // clusters,
@@ -355,5 +409,6 @@ module.exports = {
   services,
   website,
   terraform,
-  vpc
+  vpc,
+  removeServiceFromBucket
 }
