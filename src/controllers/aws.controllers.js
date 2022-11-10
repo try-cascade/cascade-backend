@@ -5,8 +5,8 @@ const { ElasticLoadBalancingV2, DescribeLoadBalancersCommand } = require("@aws-s
 
 const { IAMClient, GetUserCommand } = require("@aws-sdk/client-iam");
 
-let app = "0433"
-let env = "0433-env";
+let app = "0609"
+let env = "0609-env";
 
 
 async function applications(req, res) {
@@ -323,8 +323,8 @@ async function services(req, res) {
 
 async function terraform(req, res) {
   // create a route to find the app name and env name later
-  let app = "cat"
-  let env = "test"
+  // let app = "cat"
+  // let env = "test"
 
   const user = new IAMClient();
   const getUser = new GetUserCommand(user);
