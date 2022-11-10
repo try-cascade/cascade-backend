@@ -3,8 +3,8 @@ const { IAMClient, GetUserCommand } = require("@aws-sdk/client-iam");
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const fs = require('fs');
 
-const app = 'cat'
-const env = 'test'
+const app = 'empty'
+const env = 'empty'
 
 // const client = { stream: null } // res now accessible from /stream
 

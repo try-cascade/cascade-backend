@@ -25,5 +25,4 @@ router.get('/vpc', awsController.vpc)
 
 router.delete('/:name', awsController.removeServiceFromBucket)
 
-
 module.exports = router

@@ -1,12 +1,13 @@
 // const { ECSClient, ListClustersCommand } = require("@aws-sdk/client-ecs");
 const { EC2Client, DescribeVpcsCommand } = require("@aws-sdk/client-ec2"); 
-const { S3Client, CreateBucketCommand, PutObjectCommand, GetObjectCommand, ListBucketsCommand } = require("@aws-sdk/client-s3");
+const { S3Client, CreateBucketCommand, PutObjectCommand, GetObjectCommand, ListBucketsCommand, ListObjectsCommand } = require("@aws-sdk/client-s3");
 const { ElasticLoadBalancingV2, DescribeLoadBalancersCommand } = require("@aws-sdk/client-elastic-load-balancing-v2");
 
 const { IAMClient, GetUserCommand } = require("@aws-sdk/client-iam");
 
-let app = "cat";
-let env = "test";
+let app = "empty"
+let env = "empty";
+
 
 async function applications(req, res) {
   const s3Client = new S3Client();
@@ -14,6 +15,16 @@ async function applications(req, res) {
     const data = await s3Client.send(new ListBucketsCommand({}));
     const applications = data.Buckets.filter(bucket => bucket.Name.startsWith('cascade'))
 
+    // console.log(applications, "<--- applications applications")
+    // console.log(applications[0].Name.match(/\-(.*?)\-/)[1], "<--- applications name")
+    // if (applications) app = applications[0].Name.match(/\-(.*?)\-/)[1]
+
+    // const s3Data = await s3Client.send(new ListObjectsCommand({ Bucket: applications[0].Name })); // ?
+    // console.log(s3Data.Contents[0].Key.match(/(.*?)\//)[1], "<--- list objects command data");
+    
+    // if (app) env = s3Data.Contents[0].Key.match(/(.*?)\//)[1]
+
+    // console.log(app, env, "<--- app and env")
     res.status(200).json({applications}) // For unit tests.
   } catch (err) {
     console.log("Error", err);
@@ -126,7 +137,7 @@ async function addEnvironmentToBucket(req, res) {
   const services = {
     Bucket: "cascade-" + req.body.app.toLowerCase() + "-" + id,
     Key: `${env}/services.json`,
-    Body: JSON.stringify({ envName: env, region: req.body.region, credentials: { accessKeyId: req.body.accessKey, secretAccessKey: req.body.secretKey }, containers: [], s3Arn: `arn:aws:s3:::cascade-${app}-${id}`})
+    Body: JSON.stringify({ appName: app, envName: env, region: req.body.region, credentials: { accessKeyId: req.body.accessKey, secretAccessKey: req.body.secretKey }, containers: [], s3Arn: `arn:aws:s3:::cascade-${app}-${id}`})
   }
 
   const client = new S3Client();
@@ -161,6 +172,8 @@ async function addServiceToBucket(req, res) {
   const userResponse = await user.send(getUser);
 
   const id = userResponse.User.Arn.match(/\d+/)[0]
+
+  console.log(req.body, "request body from add service to bucket")
 
   const s3Client = new S3Client();
   const bucketParams = {
@@ -225,6 +238,8 @@ async function addServiceToBucket(req, res) {
       // var: envVars.split(", ")
     }]
     */
+    bodyContents = JSON.parse(bodyContents)
+    console.log(bodyContents)
     for (let i = 0; i < req.body.length; i++) {
       console.log(req.body[i].var, "<--- req body's first var") // [""]
       if (req.body[i].var && req.body[i].var[0].length > 0) {
@@ -239,16 +254,28 @@ async function addServiceToBucket(req, res) {
         const addService = new PutObjectCommand(env);
         await client.send(addService);
       }
+
+      bodyContents.containers.push(services[i])
     }
 
-    bodyContents = JSON.parse(bodyContents)
-    bodyContents.containers = services
+    
+    // -- support multiple body objs (from welcome)
+    // bodyContents.containers = services
+    
+    // -- support multiple body objs (from welcome) + adding an array of one body obj
+    // if (bodyContents.containers === undefined) {
+    //   bodyContents.containers = services
+    // } else {
+    //   bodyContents.containers = [...bodyContents.containers, ...services] // adding to existing containers property
+    // }
+    
+    // -- support one body obj
     // bodyContents.containers.push(service)
 
     const bucketInfo = {
       Bucket: "cascade-" + req.body[0].app.toLowerCase() + "-" + id,
       Key: `${req.body[0].env}/services.json`,
-      Body: JSON.stringify(bodyContents)
+      Body: JSON.stringify(bodyContents) // how to modify the existing object's body?
     }
 
     const addService = new PutObjectCommand(bucketInfo);
