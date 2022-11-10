@@ -3,8 +3,8 @@ const { IAMClient, GetUserCommand } = require("@aws-sdk/client-iam");
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const fs = require('fs');
 
-const app = 'empty'
-const env = 'empty'
+// const app = 'empty'
+// const env = 'empty'
 
 // const client = { stream: null } // res now accessible from /stream
 
@@ -162,8 +162,8 @@ async function upload(req, res) {
 
 async function uploadS3EnvStack(id, req) {
   const bucketParams = {
-    Bucket: "cascade-" + app.toLowerCase() + "-" + id,
-    Key: `${env}/env-stack/cdk.tf.json`,
+    Bucket: "cascade-" + req.app.toLowerCase() + "-" + id,
+    Key: `${req.env}/env-stack/cdk.tf.json`,
     Body: fs.createReadStream('./cdktf/cdktf.out/stacks/env-stack/cdk.tf.json')
   }
 
@@ -226,8 +226,8 @@ function msg(req, res) {
 
 async function uploadS3ServicesStack(id, req) {
   const bucketParams = {
-    Bucket: "cascade-" + app.toLowerCase() + "-" + id,
-    Key: `${env}/services-stack/cdk.tf.json`,
+    Bucket: "cascade-" + req.app.toLowerCase() + "-" + id,
+    Key: `${req.env}/services-stack/cdk.tf.json`,
     Body: fs.createReadStream('./cdktf/cdktf.out/stacks/service-stack/cdk.tf.json')
   }
 

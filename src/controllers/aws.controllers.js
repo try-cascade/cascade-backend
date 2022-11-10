@@ -5,26 +5,20 @@ const { ElasticLoadBalancingV2, DescribeLoadBalancersCommand } = require("@aws-s
 
 const { IAMClient, GetUserCommand } = require("@aws-sdk/client-iam");
 
-let app = "empty"
-let env = "empty";
+// let app = "empty"
+// let env = "empty";
 
 
 async function applications(req, res) {
-  const s3Client = new S3Client();
+  // const s3Client = new S3Client();
   try {
-    const data = await s3Client.send(new ListBucketsCommand({}));
-    const applications = data.Buckets.filter(bucket => bucket.Name.startsWith('cascade'))
+    let applications;
+    if (req.app && req.env) {
+      applications = [{}]
+    } else {
+      applications = []
+    }
 
-    // console.log(applications, "<--- applications applications")
-    // console.log(applications[0].Name.match(/\-(.*?)\-/)[1], "<--- applications name")
-    // if (applications) app = applications[0].Name.match(/\-(.*?)\-/)[1]
-
-    // const s3Data = await s3Client.send(new ListObjectsCommand({ Bucket: applications[0].Name })); // ?
-    // console.log(s3Data.Contents[0].Key.match(/(.*?)\//)[1], "<--- list objects command data");
-    
-    // if (app) env = s3Data.Contents[0].Key.match(/(.*?)\//)[1]
-
-    // console.log(app, env, "<--- app and env")
     res.status(200).json({applications}) // For unit tests.
   } catch (err) {
     console.log("Error", err);
@@ -98,7 +92,7 @@ async function createBucket(req, res) {
   const userResponse = await user.send(getUser);
 
   const id = userResponse.User.Arn.match(/\d+/)[0]; // we want the account id to be in the services.json
-  app = req.body.name;
+  let app = req.body.name;
 
   const client = new S3Client();
   const command = new CreateBucketCommand({ Bucket: "cascade-" + app.toLowerCase() + "-" + id })
@@ -132,12 +126,12 @@ async function addEnvironmentToBucket(req, res) {
     Body: `AWS_ACCESS_KEY_ID=${req.body.accessKey}\nAWS_REGION=${req.body.region}\nAWS_SECRET_ACCESS_KEY=${req.body.secretKey}`
   }
 
-  env = req.body.env;
+  let env = req.body.env;
 
   const services = {
     Bucket: "cascade-" + req.body.app.toLowerCase() + "-" + id,
     Key: `${env}/services.json`,
-    Body: JSON.stringify({ appName: app, envName: env, region: req.body.region, credentials: { accessKeyId: req.body.accessKey, secretAccessKey: req.body.secretKey }, containers: [], s3Arn: `arn:aws:s3:::cascade-${app}-${id}`})
+    Body: JSON.stringify({ appName: req.body.app, envName: env, region: req.body.region, credentials: { accessKeyId: req.body.accessKey, secretAccessKey: req.body.secretKey }, containers: [], s3Arn: `arn:aws:s3:::cascade-${req.body.app}-${id}`})
   }
 
   const client = new S3Client();
@@ -178,11 +172,9 @@ async function addServiceToBucket(req, res) {
   const s3Client = new S3Client();
   const bucketParams = {
     // Bucket: "cascade-" + req.body.app.toLowerCase() + "-" + id,
-    Bucket: "cascade-" + req.body[0].app.toLowerCase() + "-" + id,
-    Key: `${req.body[0].env}/services.json`,
+    Bucket: "cascade-" + req.app.toLowerCase() + "-" + id,
+    Key: `${req.env}/services.json`,
   }
-
-  console.log(req.body[0], "<--- from line 164")
 
   // {
   //   app: 'jk',
@@ -243,11 +235,11 @@ async function addServiceToBucket(req, res) {
     for (let i = 0; i < req.body.length; i++) {
       console.log(req.body[i].var, "<--- req body's first var") // [""]
       if (req.body[i].var && req.body[i].var[0].length > 0) {
-        services[i]["s3ArnEnv"] = `arn:aws:s3:::cascade-${req.body[i].app}-${id}/${req.body[i].env}/${req.body[i].service}/.env` // Only has this if there are .env vars
+        services[i]["s3ArnEnv"] = `arn:aws:s3:::cascade-${req.app}-${id}/${req.env}/${req.body[i].service}/.env` // Only has this if there are .env vars
   
         const env = {
-          Bucket: "cascade-" + req.body[i].app.toLowerCase() + "-" + id,
-          Key: `${req.body[i].env}/${req.body[i].service}/.env`,
+          Bucket: "cascade-" + req.app.toLowerCase() + "-" + id,
+          Key: `${req.env}/${req.body[i].service}/.env`,
           Body: req.body[i].var.join("\n")
         }
   
@@ -273,8 +265,8 @@ async function addServiceToBucket(req, res) {
     // bodyContents.containers.push(service)
 
     const bucketInfo = {
-      Bucket: "cascade-" + req.body[0].app.toLowerCase() + "-" + id,
-      Key: `${req.body[0].env}/services.json`,
+      Bucket: "cascade-" + req.app.toLowerCase() + "-" + id,
+      Key: `${req.env}/services.json`,
       Body: JSON.stringify(bodyContents) // how to modify the existing object's body?
     }
 
@@ -298,8 +290,8 @@ async function services(req, res) {
   const s3Client = new S3Client();
 
   const bucketParams = {
-    Bucket: "cascade-" + app.toLowerCase() + "-" + id,
-    Key: `${env}/services.json`,
+    Bucket: "cascade-" + req.app.toLowerCase() + "-" + id,
+    Key: `${req.env}/services.json`,
   }
 
   try {
@@ -337,13 +329,13 @@ async function terraform(req, res) {
   const s3Client = new S3Client();
 
   const envStack = {
-    Bucket: "cascade-" + app.toLowerCase() + "-" + id,
-    Key: `${env}/env-stack/cdk.tf.json`,
+    Bucket: "cascade-" + req.app.toLowerCase() + "-" + id,
+    Key: `${req.env}/env-stack/cdk.tf.json`,
   }
 
   const serviceStack = {
-    Bucket: "cascade-" + app.toLowerCase() + "-" + id,
-    Key: `${env}/services-stack/cdk.tf.json`,
+    Bucket: "cascade-" + req.app.toLowerCase() + "-" + id,
+    Key: `${req.env}/services-stack/cdk.tf.json`,
   }
 
   try {
@@ -386,8 +378,8 @@ async function removeServiceFromBucket(req, res) {
   const s3Client = new S3Client();
 
   const servicesLocation = {
-    Bucket: "cascade-" + app.toLowerCase() + "-" + id,
-    Key: `${env}/services.json`,
+    Bucket: "cascade-" + req.app.toLowerCase() + "-" + id,
+    Key: `${req.env}/services.json`,
   }
 
   try {
@@ -410,8 +402,8 @@ async function removeServiceFromBucket(req, res) {
     services.containers = services.containers.filter(service => service.name !== req.params.name)
 
     const bucketInfo = {
-      Bucket: "cascade-" + app.toLowerCase() + "-" + id,
-      Key: `${env}/services.json`,
+      Bucket: "cascade-" + req.app.toLowerCase() + "-" + id,
+      Key: `${req.env}/services.json`,
       Body: JSON.stringify(services)
     }
 
