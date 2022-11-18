@@ -5,8 +5,8 @@ const { ElasticLoadBalancingV2, DescribeLoadBalancersCommand } = require("@aws-s
 
 const { IAMClient, GetUserCommand } = require("@aws-sdk/client-iam");
 
-let app = "empty"
-let env = "empty";
+let app = "demo"
+let env = "demo";
 
 
 async function applications(req, res) {
