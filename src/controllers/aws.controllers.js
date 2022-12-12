@@ -65,7 +65,7 @@ async function vpc(req, res) {
 
 async function website(req, res) {
   const client = new ElasticLoadBalancingV2();
-  const command = new DescribeLoadBalancersCommand({ Names: [`cs-${env}-lb`]}); // get envName later
+  const command = new DescribeLoadBalancersCommand({ Names: [`cs-${req.env}-lb`]}); // get envName later
   try {
     const response = await client.send(command) // handle error
     const dnsName = response.LoadBalancers[0].DNSName;
