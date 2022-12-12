@@ -14,7 +14,7 @@ async function getAppEnvNames(req, res, next) {
     const data = await s3Client.send(new ListBucketsCommand({}));
     const applications = data.Buckets.filter(bucket => bucket.Name.startsWith('cascade'))
 
-    if (applications) req.app = applications[0].Name.match(/\-(.*?)\-/)[1]
+    if (applications.length !== 0) req.app = applications[0].Name.match(/\-(.*?)\-/)[1]
 
     const s3Data = await s3Client.send(new ListObjectsCommand({ Bucket: applications[0].Name }));
 

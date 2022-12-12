@@ -18,7 +18,7 @@ router.post('/service', getAppEnvNames, awsController.addServiceToBucket)
 
 router.get('/services', getAppEnvNames, awsController.services)
 
-router.get('/website', awsController.website)
+router.get('/website', getAppEnvNames, awsController.website)
 
 router.get('/terraform', getAppEnvNames, awsController.terraform)
 
