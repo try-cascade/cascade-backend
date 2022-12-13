@@ -1,6 +1,5 @@
-import { IamRole } from "@cdktf/provider-aws/lib/iam-role"
+import { IamRole } from "@cdktf/provider-aws/lib/iam-role";
 
-// Role that allows us to push logs
 export default function createTaskRole(scope: any, name: string) {
   const taskRole = new IamRole(scope, name, {
     name,

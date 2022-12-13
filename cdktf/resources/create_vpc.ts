@@ -1,4 +1,4 @@
-import { Vpc } from '@cdktf/provider-aws/lib/vpc'
+import { Vpc } from '@cdktf/provider-aws/lib/vpc';
 
 export default function createVpc(scope: any, name: string) {
   const aws_vpc = new Vpc(scope, name, {
@@ -9,8 +9,8 @@ export default function createVpc(scope: any, name: string) {
     tags: {
       Name: name
     }
-  })
+  });
 
-  return aws_vpc
+  return aws_vpc;
 }
 

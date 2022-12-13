@@ -1,26 +1,18 @@
 const express = require('express');
 const router = express.Router();
-const terraformController = require('../controllers/terraform.controller')
-const { getAppEnvNames } = require('../utils/middleware')
+const terraformController = require('../controllers/terraform.controller');
+const { getAppEnvNames } = require('../utils/middleware');
 
-// Create json terraform document
-router.post('/generate', terraformController.create)
+// Generate json terraform document
+router.post('/generate', terraformController.generate);
 
-// Deploys infrastructure to AWS
-router.post('/deploy', terraformController.deploy)
+// Deploy infrastructure to AWS
+router.get('/deploy', terraformController.deploy);
 
-// Destroys infrastructure from AWS
-// router.post('/destroy', terraformController.destroy) 
-router.get('/destroy', terraformController.destroy) // testing sse with get
+// Destroy infrastructure from AWS
+router.get('/destroy', terraformController.destroy);
 
-// Uploads the TF json files to S3
-router.post('/upload', getAppEnvNames, terraformController.upload)
+// Upload the TF json files to S3
+router.post('/upload', getAppEnvNames, terraformController.upload);
 
-// dummy route for test
-router.get('/msg', terraformController.msg)
-
-// created for debugging
-router.get('/deployNoStream', terraformController.deployNoStream)
-router.get('/destroyNoStream', terraformController.destroyNoStream)
-
-module.exports = router
+module.exports = router;
