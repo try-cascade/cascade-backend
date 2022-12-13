@@ -12,11 +12,11 @@ function generate(req, res) {
 
   child.on("close", (message) => {
     if (message === 0) {
-      res.status(200).json({ message: "Successfully Built" })
+      res.status(200).json({ message: "Successfully Built" });
     } else {
-      res.status(400).json({ message: "Something went wrong" })
+      res.status(400).json({ message: "Something went wrong" });
     }
-  })
+  });
 }
 
 function deploy(req, res) {
@@ -28,7 +28,7 @@ function deploy(req, res) {
    stdio: ['inherit', 'pipe'],
    shell: true,
    cwd: './cdktf'
- })
+ });
 
  spw.stdout.on('data', function (data) {
    res.write('data: ' + data.toString() + "\n\n");
@@ -53,7 +53,7 @@ function destroy(req, res) {
     stdio: ['inherit', 'pipe'],
     shell: true,
     cwd: './cdktf'
-  })
+  });
 
   spw.stdout.on('data', function (data) {
     res.write('data: ' + data.toString() + "\n\n");
@@ -74,20 +74,21 @@ async function upload(req, res) {
   const getUser = new GetUserCommand(user);
   const userResponse = await user.send(getUser);
 
-  const id = userResponse.User.Arn.match(/\d+/)[0]
+  const id = userResponse.User.Arn.match(/\d+/)[0];
 
-  await uploadS3EnvStack(id, req)
-  const response = await uploadS3ServicesStack(id, req)
+  await uploadS3EnvStack(id, req);
+  const response = await uploadS3ServicesStack(id, req);
 
-  res.status(200).json(response)
+  res.status(200).json(response);
 }
 
 async function uploadS3EnvStack(id, req) {
   const bucketParams = {
     Bucket: "cascade-" + req.app.toLowerCase() + "-" + id,
     Key: `${req.env}/env-stack/cdk.tf.json`,
-    Body: fs.createReadStream('./cdktf/cdktf.out/stacks/env-stack/cdk.tf.json')
-  }
+    Body: fs.createReadStream('./cdktf/cdktf.out/stacks/env-stack/cdk.tf.json'),
+    ContentLength: fs.createReadStream('./cdktf/cdktf.out/stacks/env-stack/cdk.tf.json').byteCount // added
+  };
 
   const client = new S3Client();
   const command = new PutObjectCommand(bucketParams);
@@ -99,12 +100,12 @@ async function uploadS3ServicesStack(id, req) {
     Bucket: "cascade-" + req.app.toLowerCase() + "-" + id,
     Key: `${req.env}/services-stack/cdk.tf.json`,
     Body: fs.createReadStream('./cdktf/cdktf.out/stacks/service-stack/cdk.tf.json')
-  }
+  };
 
   const client = new S3Client();
   const command = new PutObjectCommand(bucketParams);
   const response = await client.send(command);
-  return response
+  return response;
 }
 
 module.exports = {
@@ -112,4 +113,4 @@ module.exports = {
   deploy,
   destroy,
   upload
-}
+};

@@ -1,6 +1,5 @@
 import { SecurityGroup } from "@cdktf/provider-aws/lib/security-group";
 
-// pass in user app's port (currently hard-coded)
 export default function createAlbSecurityGroup(scope: any, name: string, vpcId: string) {
   const securityGroup = new SecurityGroup(scope, name, {
       vpcId: vpcId,

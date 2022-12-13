@@ -1,4 +1,4 @@
-import { IamRole } from "@cdktf/provider-aws/lib/iam-role"
+import { IamRole } from "@cdktf/provider-aws/lib/iam-role";
 
 export default function createExecutionRole(scope: any, name: string, s3Arn: string) {
   const executionRole = new IamRole(scope, name, {
@@ -38,7 +38,7 @@ export default function createExecutionRole(scope: any, name: string, s3Arn: str
                 "s3:GetObject"
               ],
               "Resource": [
-                `${s3Arn}/*/.env` //"arn:aws:s3:::cascade-hello-bucket/.env"
+                `${s3Arn}/*/.env` 
               ]
             },
             {
@@ -47,7 +47,7 @@ export default function createExecutionRole(scope: any, name: string, s3Arn: str
                 "s3:GetObject"
               ],
               "Resource": [
-                `${s3Arn}/*/*/.env` //"arn:aws:s3:::cascade-hello-bucket/.env"
+                `${s3Arn}/*/*/.env` 
               ]
             },
             {
@@ -56,14 +56,14 @@ export default function createExecutionRole(scope: any, name: string, s3Arn: str
                 "s3:GetBucketLocation"
               ],
               "Resource": [
-                s3Arn //"arn:aws:s3:::cascade-hello-bucket"
+                s3Arn 
               ]
             }
           ]
         })
       }
     ],
-    // this role shall only be used by an ECS task
+
     assumeRolePolicy: JSON.stringify({
       Version: "2012-10-17",
       Statement: [

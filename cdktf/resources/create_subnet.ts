@@ -1,4 +1,4 @@
-import { Subnet } from '@cdktf/provider-aws/lib/subnet'
+import { Subnet } from '@cdktf/provider-aws/lib/subnet';
 
 export default function createSubnet(scope: any, name: string, vpcId: string, isPublic: boolean, region: string, cidr: string) {
   return new Subnet(scope, name, {
@@ -9,5 +9,5 @@ export default function createSubnet(scope: any, name: string, vpcId: string, is
     tags: {
       Name: name
     }
-  })
+  });
 }

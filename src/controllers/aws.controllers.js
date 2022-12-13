@@ -148,7 +148,6 @@ async function addServiceToBucket(req, res) {
   };
 
   try {
-    // Create a helper function to convert a ReadableStream to a string.
     const streamToString = (stream) =>
       new Promise((resolve, reject) => {
         const chunks = [];
@@ -157,10 +156,8 @@ async function addServiceToBucket(req, res) {
         stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
       });
 
-    // Get the object from the Amazon S3 bucket. It is returned as a ReadableStream.
     const response = await s3Client.send(new GetObjectCommand(bucketParams));
 
-    // Convert the ReadableStream to a string.
     let bodyContents = await streamToString(response.Body);
     const client = new S3Client();
     const services = req.body.map(serv => {
@@ -171,24 +168,11 @@ async function addServiceToBucket(req, res) {
       }
     });
 
-    /*
-    from Frontend
-    const body = [{
-      app: appName,
-      env: envName,
-      service: "service", // change back to `name`
-      image: "image", // change back to image
-      port: 3003, // change back to port
-      type: "frontend",
-      frontFacingPath: "/",
-      // var: envVars.split(", ")
-    }]
-    */
     bodyContents = JSON.parse(bodyContents);
 
     for (let i = 0; i < req.body.length; i++) {
       if (req.body[i].var && req.body[i].var[0].length > 0) {
-        services[i]["s3ArnEnv"] = `arn:aws:s3:::cascade-${req.app}-${id}/${req.env}/${req.body[i].service}/.env`; // Only has this if there are .env vars
+        services[i]["s3ArnEnv"] = `arn:aws:s3:::cascade-${req.app}-${id}/${req.env}/${req.body[i].service}/.env`; 
   
         const env = {
           Bucket: "cascade-" + req.app.toLowerCase() + "-" + id,
@@ -233,7 +217,6 @@ async function services(req, res) {
   };
 
   try {
-    // Create a helper function to convert a ReadableStream to a string.
     const streamToString = (stream) =>
       new Promise((resolve, reject) => {
         const chunks = [];
@@ -242,10 +225,8 @@ async function services(req, res) {
         stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
       });
 
-    // Get the object from the Amazon S3 bucket. It is returned as a ReadableStream.
     const response = await s3Client.send(new GetObjectCommand(bucketParams));
 
-    // Convert the ReadableStream to a string.
     const bodyContents = await streamToString(response.Body);
     res.status(200).json(JSON.parse(bodyContents));
   } catch (err) {
@@ -273,7 +254,6 @@ async function terraform(req, res) {
   };
 
   try {
-    // Create a helper function to convert a ReadableStream to a string.
     const streamToString = (stream) =>
       new Promise((resolve, reject) => {
         const chunks = [];
@@ -282,7 +262,6 @@ async function terraform(req, res) {
         stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
       });
 
-    // Get the object from the Amazon S3 bucket. It is returned as a ReadableStream.
     let environment = await s3Client.send(new GetObjectCommand(envStack));
     let services = await s3Client.send(new GetObjectCommand(serviceStack));
 
@@ -321,12 +300,10 @@ async function removeServiceFromBucket(req, res) {
         stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
       });
 
-    // Get the object from the Amazon S3 bucket. It is returned as a ReadableStream.
     let services = await s3Client.send(new GetObjectCommand(servicesLocation));
     services = await streamToString(services.Body);
     services = JSON.parse(services);
 
-    // remove service from services.json
     services.containers = services.containers.filter(service => service.name !== req.params.name);
 
     const bucketInfo = {
@@ -354,4 +331,4 @@ module.exports = {
   terraform,
   vpc,
   removeServiceFromBucket
-}
+};

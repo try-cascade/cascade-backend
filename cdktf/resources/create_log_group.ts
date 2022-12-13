@@ -7,7 +7,7 @@ export default function createLogGroup(scope: any, name: string) {
     tags: {
       Name: name
     }
-  })
+  });
 
-  return logGroup
+  return logGroup;
 }

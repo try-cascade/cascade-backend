@@ -9,7 +9,7 @@ export default function createAlbTargetGroup(scope: any, name: string, vpcId: st
     targetType: "ip",
     port: 80,
     protocol: "HTTP",
-  })
+  });
 
   return targetGroup;
 }

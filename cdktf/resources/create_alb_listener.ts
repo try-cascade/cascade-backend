@@ -12,7 +12,7 @@ export default function createAlbListener(scope: any, name: string, lb: string, 
     tags: {
       Name: name
     }
-  })
+  });
 
-  return albListener
+  return albListener;
 }

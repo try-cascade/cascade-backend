@@ -1,4 +1,4 @@
-import { InternetGateway } from '@cdktf/provider-aws/lib/internet-gateway'
+import { InternetGateway } from '@cdktf/provider-aws/lib/internet-gateway';
 
 export default function createInternetGateway(scope: any, name: string, vpcId: string) {
   const gateway = new InternetGateway(scope, name, {
@@ -6,7 +6,7 @@ export default function createInternetGateway(scope: any, name: string, vpcId: s
     tags: {
       Name: name
     }
-  })
+  });
 
-  return gateway
+  return gateway;
 }

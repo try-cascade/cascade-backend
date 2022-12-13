@@ -1,4 +1,4 @@
-import { RouteTable } from '@cdktf/provider-aws/lib/route-table'
+import { RouteTable } from '@cdktf/provider-aws/lib/route-table';
 
 export default function createRouteTable(scope: any, name: string, vpcId: string) {
   return new RouteTable(scope, name, {
@@ -6,5 +6,5 @@ export default function createRouteTable(scope: any, name: string, vpcId: string
     tags: {
       Name: name
     }
-  })
+  });
 }

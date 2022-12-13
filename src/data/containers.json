@@ -1,9 +1,0 @@
-[
-  {
-    "name": "backend",
-    "container": "/nekonatnat/backend",
-    "port": 3005,
-    "memory": 0.05,
-    "cpu": 0.05
-  }
-]

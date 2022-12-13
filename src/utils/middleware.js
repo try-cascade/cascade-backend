@@ -20,4 +20,4 @@ async function getAppEnvNames(req, res, next) {
 
 module.exports = {
   getAppEnvNames
-}
+};
