@@ -73,21 +73,23 @@ async function upload(req, res) {
   const user = new IAMClient();
   const getUser = new GetUserCommand(user);
   const userResponse = await user.send(getUser);
-
   const id = userResponse.User.Arn.match(/\d+/)[0];
 
-  await uploadS3EnvStack(id, req);
-  const response = await uploadS3ServicesStack(id, req);
+  try {
+    await uploadS3EnvStack(id, req);
+    const response = await uploadS3ServicesStack(id, req);
 
-  res.status(200).json(response);
+    res.status(200).json(response);
+  } catch(e) {
+    res.status(200).json({ error: "timed out" });
+  }
 }
 
 async function uploadS3EnvStack(id, req) {
   const bucketParams = {
     Bucket: "cascade-" + req.app.toLowerCase() + "-" + id,
     Key: `${req.env}/env-stack/cdk.tf.json`,
-    Body: fs.createReadStream('./cdktf/cdktf.out/stacks/env-stack/cdk.tf.json'),
-    ContentLength: fs.createReadStream('./cdktf/cdktf.out/stacks/env-stack/cdk.tf.json').byteCount // added
+    Body: fs.createReadStream('./cdktf/cdktf.out/stacks/env-stack/cdk.tf.json')
   };
 
   const client = new S3Client();

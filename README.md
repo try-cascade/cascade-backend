@@ -1,5 +1,8 @@
 # Cascade Backend
 Backend for Cascade GUI
 
-- Installation with `git clone`: https://github.com/try-cascade/cascade-gui
-- Installation with `docker-compose`: https://github.com/try-cascade/cascade-compose
+### Run Locally
+Follow the instructions in [Cascade GUI](https://github.com/try-cascade/cascade-gui)
+
+### Run with Docker
+Follow the instructions in [Cascade Compose](https://github.com/try-cascade/cascade-compose)
