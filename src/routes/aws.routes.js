@@ -1,29 +1,24 @@
 const express = require('express');
 const router = express.Router();
-const awsController = require('../controllers/aws.controllers')
-const { getAppEnvNames } = require('../utils/middleware')
+const awsController = require('../controllers/aws.controllers');
+const { getAppEnvNames } = require('../utils/middleware');
 
-// Get listing of clusters
-// router.get('/clusters', awsController.clusters)
+router.post('/bucket', awsController.createBucket);
 
-router.post('/bucket', awsController.createBucket)
+router.get('/applications', getAppEnvNames, awsController.applications);
 
-router.get('/applications', getAppEnvNames, awsController.applications)
+router.post('/environment', awsController.addEnvironmentToBucket);
 
-router.post('/environment', awsController.addEnvironmentToBucket)
+router.post('/service', getAppEnvNames, awsController.addServiceToBucket);
 
-// router.get('/:app/environment/:env', awsController.environment)
+router.get('/services', getAppEnvNames, awsController.services);
 
-router.post('/service', getAppEnvNames, awsController.addServiceToBucket)
+router.get('/website', getAppEnvNames, awsController.website);
 
-router.get('/services', getAppEnvNames, awsController.services)
+router.get('/terraform', getAppEnvNames, awsController.terraform);
 
-router.get('/website', getAppEnvNames, awsController.website)
+router.get('/vpc', awsController.vpc);
 
-router.get('/terraform', getAppEnvNames, awsController.terraform)
+router.delete('/:name', getAppEnvNames, awsController.removeServiceFromBucket);
 
-router.get('/vpc', awsController.vpc)
-
-router.delete('/:name', getAppEnvNames, awsController.removeServiceFromBucket)
-
-module.exports = router
+module.exports = router;
